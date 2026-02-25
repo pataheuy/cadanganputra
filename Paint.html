@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pufutara Paint | Arsitektur Digital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --surface: #f6f8fa;
+            --text: #1e1e1e;
+            --border: #e1e4e8;
+            --accent: #0969da;
+            --muted: #586069;
+            --panel-width: 280px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--surface);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* ----- TOOLBAR (Pufutara style) ----- */
+        .toolbar {
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            z-index: 10;
+        }
+        .logo {
+            font-weight: 900;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            padding-right: 20px;
+            border-right: 2px solid var(--border);
+        }
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-right: 1px solid var(--border);
+            padding-right: 16px;
+        }
+        .tool-group:last-child { border-right: none; }
+        .btn {
+            background: none;
+            border: 1px solid transparent;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--muted);
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+        }
+        .btn:hover {
+            color: #000;
+            background: var(--surface);
+            border-color: var(--border);
+        }
+        .btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .btn.small {
+            padding: 6px 10px;
+            font-size: 0.75rem;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        select, input[type="color"], input[type="text"] {
+            border: 1px solid var(--border);
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background: white;
+            cursor: pointer;
+        }
+        input[type="range"] {
+            width: 100px;
+        }
+        .value-badge {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        /* ----- LAYOUT UTAMA ----- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        /* Area kanvas */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #e9edf2;
+            padding: 20px;
+            overflow: auto;
+            position: relative;
+        }
+        .canvas-container {
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        canvas {
+            display: block;
+            width: 700px;
+            height: 500px;
+            cursor: crosshair;
+        }
+        .canvas-container.move-mode canvas {
+            cursor: grab;
+        }
+        .canvas-container.move-mode canvas:active {
+            cursor: grabbing;
+        }
+        /* Brush preview */
+        .brush-preview {
+            position: absolute;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            display: none;
+            box-shadow: 0 0 0 1px white;
+        }
+        /* Selection box */
+        .selection-box {
+            position: absolute;
+            border: 2px dashed var(--accent);
+            background: rgba(9, 105, 218, 0.1);
+            pointer-events: none;
+            display: none;
+            z-index: 50;
+        }
+        .selection-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 51;
+        }
+        /* Panel kanan (layer, properti) */
+        .right-panel {
+            width: var(--panel-width);
+            background: var(--bg);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .panel-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .panel-section h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+        .layer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .layer-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .layer-item.active {
+            border-color: var(--accent);
+            background: #e7f0ff;
+        }
+        .layer-item .layer-vis {
+            width: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .layer-item .layer-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .layer-item .layer-opacity {
+            width: 50px;
+            font-size: 0.7rem;
+            text-align: right;
+        }
+        .layer-controls {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .filter-preview {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .filter-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+        }
+        .filter-btn:hover {
+            background: var(--border);
+        }
+        /* Text properties */
+        .text-properties {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--surface);
+            border-radius: 4px;
+        }
+        .text-property-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .text-property-row label {
+            width: 60px;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+        .text-property-row input, .text-property-row select {
+            flex: 1;
+        }
+        /* Status bar */
+        .status-bar {
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            padding: 8px 20px;
+            font-size: 0.7rem;
+            color: var(--muted);
+            display: flex;
+            justify-content: space-between;
+        }
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+        }
+        .modal-content h3 {
+            margin-bottom: 16px;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            margin-bottom: 12px;
+            padding: 8px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal untuk edit teks -->
+    <div class="modal" id="text-modal">
+        <div class="modal-content">
+            <h3>Edit Teks</h3>
+            <input type="text" id="modal-text" placeholder="Teks" value="Teks">
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <input type="number" id="modal-font-size" placeholder="Ukuran" value="24" min="8" max="72" style="flex:1">
+                <select id="modal-font-family" style="flex:2">
+                    <option value="Inter">Inter</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Verdana">Verdana</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <select id="modal-font-weight" style="flex:1">
+                    <option value="normal">Normal</option>
+                    <option value="bold">Bold</option>
+                    <option value="300">Light</option>
+                    <option value="600">Semi Bold</option>
+                </select>
+                <select id="modal-font-style" style="flex:1">
+                    <option value="normal">Normal</option>
+                    <option value="italic">Italic</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <input type="color" id="modal-color" value="#0969da" style="flex:1; height: 40px;">
+                <input type="range" id="modal-opacity" min="0" max="1" step="0.1" value="1" style="flex:2">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn" id="modal-cancel">Batal</button>
+                <button class="btn active" id="modal-save">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar utama -->
+    <div class="toolbar">
+        <div class="logo">PUFUTARA.PAINT</div>
+        
+        <div class="tool-group">
+            <button class="btn" id="undo" disabled>↶ Undo</button>
+            <button class="btn" id="redo" disabled>↷ Redo</button>
+        </div>
+
+        <div class="tool-group">
+            <button class="btn active" id="tool-brush">🖌️ Brush</button>
+            <button class="btn" id="tool-eraser">🧽 Eraser</button>
+            <button class="btn" id="tool-fill">🎨 Fill</button>
+            <button class="btn" id="tool-text">TEXT</button>
+            <button class="btn" id="tool-move">↔️ Move</button>
+        </div>
+
+        <div class="tool-group">
+            <input type="color" id="color-picker" value="#0969da">
+            <span class="value-badge" id="current-color">#0969da</span>
+        </div>
+
+        <div class="tool-group">
+            <span style="font-size:0.8rem;">Ukuran:</span>
+            <input type="range" id="brush-size" min="1" max="50" value="5">
+            <span class="value-badge" id="size-value">5</span>
+        </div>
+
+        <div class="tool-group">
+            <span style="font-size:0.8rem;">Opacity:</span>
+            <input type="range" id="brush-opacity" min="0" max="1" step="0.1" value="1">
+            <span class="value-badge" id="opacity-value">100%</span>
+        </div>
+
+        <div class="tool-group">
+            <button class="btn" id="export-png">EXPORT PNG</button>
+        </div>
+    </div>
+
+    <!-- Workspace: canvas + panel kanan -->
+    <div class="workspace">
+        <div class="canvas-area" id="canvas-area">
+            <div class="canvas-container" id="canvas-container">
+                <canvas id="main-canvas" width="700" height="500"></canvas>
+                <div class="brush-preview" id="brush-preview"></div>
+                <div class="selection-box" id="selection-box"></div>
+            </div>
+        </div>
+        <div class="right-panel">
+            <!-- Layer section -->
+            <div class="panel-section">
+                <h3>Layer</h3>
+                <div class="layer-list" id="layer-list">
+                    <!-- Akan diisi JS -->
+                </div>
+                <div class="layer-controls">
+                    <button class="btn small" id="add-layer">+ Tambah</button>
+                    <button class="btn small" id="delete-layer">– Hapus</button>
+                    <button class="btn small" id="move-up">↑ Naik</button>
+                    <button class="btn small" id="move-down">↓ Turun</button>
+                </div>
+            </div>
+            <!-- Properti layer (opacity & blend) -->
+            <div class="panel-section">
+                <h3>Properti Layer</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div>
+                        <label style="font-size:0.8rem;">Opacity</label>
+                        <input type="range" id="layer-opacity" min="0" max="1" step="0.1" value="1">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem;">Blend mode</label>
+                        <select id="blend-mode">
+                            <option value="source-over">Normal</option>
+                            <option value="multiply">Multiply</option>
+                            <option value="screen">Screen</option>
+                            <option value="overlay">Overlay</option>
+                            <option value="darken">Darken</option>
+                            <option value="lighten">Lighten</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <!-- Properti Teks (muncul jika ada teks yang dipilih) -->
+            <div class="panel-section" id="text-properties-panel" style="display: none;">
+                <h3>Properti Teks</h3>
+                <div class="text-properties">
+                    <div class="text-property-row">
+                        <label>Teks:</label>
+                        <input type="text" id="text-content" placeholder="Isi teks">
+                    </div>
+                    <div class="text-property-row">
+                        <label>Ukuran:</label>
+                        <input type="range" id="text-size" min="8" max="72" value="24">
+                        <span class="value-badge" id="text-size-value">24</span>
+                    </div>
+                    <div class="text-property-row">
+                        <label>Font:</label>
+                        <select id="text-font">
+                            <option value="Inter">Inter</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Courier New">Courier New</option>
+                        </select>
+                    </div>
+                    <div class="text-property-row">
+                        <label>Style:</label>
+                        <select id="text-style">
+                            <option value="normal">Normal</option>
+                            <option value="bold">Bold</option>
+                            <option value="italic">Italic</option>
+                            <option value="bold italic">Bold Italic</option>
+                        </select>
+                    </div>
+                    <div class="text-property-row">
+                        <label>Warna:</label>
+                        <input type="color" id="text-color" value="#0969da">
+                    </div>
+                    <button class="btn small" id="update-text">Update Teks</button>
+                </div>
+            </div>
+            <!-- Filter dasar -->
+            <div class="panel-section">
+                <h3>Filter (terapkan ke layer aktif)</h3>
+                <div class="filter-preview">
+                    <div class="filter-btn" data-filter="grayscale">Grayscale</div>
+                    <div class="filter-btn" data-filter="invert">Invert</div>
+                    <div class="filter-btn" data-filter="sepia">Sepia</div>
+                    <div class="filter-btn" data-filter="brightness">Brightness +</div>
+                </div>
+            </div>
+            <!-- Info -->
+            <div class="panel-section">
+                <div style="font-size:0.75rem; color:var(--muted);">
+                    <p>Move Tool: geser objek</p>
+                    <p>Double-click teks untuk edit</p>
+                    <p>Klik TEXT lalu canvas untuk teks baru</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+        <span id="status-message">Siap menggambar</span>
+        <span>Layer: <span id="layer-count">1</span> | Pufutara Paint v1.2</span>
+    </div>
+
+    <script>
+        (function() {
+            // --- Inisialisasi canvas dan konfigurasi ---
+            const canvas = document.getElementById('main-canvas');
+            const ctx = canvas.getContext('2d');
+            const width = 700, height = 500;
+            const canvasArea = document.getElementById('canvas-area');
+            const canvasContainer = document.getElementById('canvas-container');
+            const brushPreview = document.getElementById('brush-preview');
+            const selectionBox = document.getElementById('selection-box');
+
+            // --- Sistem Layer ---
+            let layers = [];
+            let activeLayerIndex = 0;
+
+            // Text objects management
+            let textObjects = []; // Array of text objects: { id, layerIndex, x, y, text, fontSize, fontFamily, fontWeight, fontStyle, color, opacity }
+            let selectedTextId = null;
+            let isDraggingText = false;
+            let dragStartX, dragStartY;
+            let dragTextStartX, dragTextStartY;
+
+            // History system
+            let history = [];
+            let historyIndex = -1;
+            const MAX_HISTORY = 50;
+            const undoBtn = document.getElementById('undo');
+            const redoBtn = document.getElementById('redo');
+
+            // Status message
+            const statusMessage = document.getElementById('status-message');
+
+            // Modal elements
+            const textModal = document.getElementById('text-modal');
+            const modalText = document.getElementById('modal-text');
+            const modalFontSize = document.getElementById('modal-font-size');
+            const modalFontFamily = document.getElementById('modal-font-family');
+            const modalFontWeight = document.getElementById('modal-font-weight');
+            const modalFontStyle = document.getElementById('modal-font-style');
+            const modalColor = document.getElementById('modal-color');
+            const modalOpacity = document.getElementById('modal-opacity');
+            const modalCancel = document.getElementById('modal-cancel');
+            const modalSave = document.getElementById('modal-save');
+
+            // Text properties panel
+            const textPropertiesPanel = document.getElementById('text-properties-panel');
+            const textContent = document.getElementById('text-content');
+            const textSize = document.getElementById('text-size');
+            const textSizeValue = document.getElementById('text-size-value');
+            const textFont = document.getElementById('text-font');
+            const textStyle = document.getElementById('text-style');
+            const textColor = document.getElementById('text-color');
+            const updateTextBtn = document.getElementById('update-text');
+
+            // Struktur layer: { canvas (offscreen), opacity, blendMode, visible, name }
+            function createLayer(name = 'Layer', width, height, isBackground = false) {
+                const offscreen = document.createElement('canvas');
+                offscreen.width = width;
+                offscreen.height = height;
+                const offCtx = offscreen.getContext('2d');
+                
+                if (isBackground) {
+                    offCtx.fillStyle = '#ffffff';
+                    offCtx.fillRect(0, 0, width, height); // putih solid
+                } else {
+                    offCtx.clearRect(0, 0, width, height); // transparan
+                }
+                
+                return {
+                    canvas: offscreen,
+                    ctx: offCtx,
+                    opacity: 1,
+                    blendMode: 'source-over',
+                    visible: true,
+                    name: name,
+                    isBackground: isBackground || false
+                };
+            }
+
+            // Layer dasar (putih)
+            function initLayers() {
+                layers = [];
+                const bgLayer = createLayer('Background', width, height, true);
+                layers.push(bgLayer);
+
+                const layer1 = createLayer('Layer 1', width, height);
+                layers.push(layer1);
+                activeLayerIndex = 1; // aktifkan layer 1
+                
+                textObjects = [];
+                selectedTextId = null;
+                hideTextProperties();
+            }
+            initLayers();
+
+            // Save state for undo/redo
+            function saveState() {
+                // Simpan state semua layer sebagai ImageData
+                const state = layers.map(layer => {
+                    const imageData = layer.ctx.getImageData(0, 0, width, height);
+                    return {
+                        imageData: imageData,
+                        opacity: layer.opacity,
+                        blendMode: layer.blendMode,
+                        visible: layer.visible,
+                        name: layer.name,
+                        isBackground: layer.isBackground
+                    };
+                });
+
+                // Simpan juga text objects
+                const textState = textObjects.map(obj => ({ ...obj }));
+
+                // Hapus history setelah index saat ini
+                history = history.slice(0, historyIndex + 1);
+                history.push({ layers: state, texts: textState });
+                
+                // Batasi history
+                if (history.length > MAX_HISTORY) {
+                    history.shift();
+                }
+                
+                historyIndex = history.length - 1;
+                updateUndoRedoButtons();
+            }
+
+            function restoreState(state) {
+                // Restore layers dari state
+                layers = state.layers.map((layerData, index) => {
+                    const offscreen = document.createElement('canvas');
+                    offscreen.width = width;
+                    offscreen.height = height;
+                    const offCtx = offscreen.getContext('2d');
+                    offCtx.putImageData(layerData.imageData, 0, 0);
+                    
+                    return {
+                        canvas: offscreen,
+                        ctx: offCtx,
+                        opacity: layerData.opacity,
+                        blendMode: layerData.blendMode,
+                        visible: layerData.visible,
+                        name: layerData.name,
+                        isBackground: layerData.isBackground
+                    };
+                });
+                
+                // Restore text objects
+                textObjects = state.texts.map(obj => ({ ...obj }));
+                
+                render();
+                updateUndoRedoButtons();
+            }
+
+            function undo() {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    restoreState(history[historyIndex]);
+                    setStatus('Undo: ' + (history.length - historyIndex) + ' langkah');
+                }
+            }
+
+            function redo() {
+                if (historyIndex < history.length - 1) {
+                    historyIndex++;
+                    restoreState(history[historyIndex]);
+                    setStatus('Redo: ' + (historyIndex + 1) + ' dari ' + history.length);
+                }
+            }
+
+            function updateUndoRedoButtons() {
+                undoBtn.disabled = historyIndex <= 0;
+                redoBtn.disabled = historyIndex >= history.length - 1;
+            }
+
+            // Set status message
+            function setStatus(msg) {
+                statusMessage.textContent = msg;
+            }
+
+            // Render semua layer dan text objects
+            function render() {
+                ctx.clearRect(0, 0, width, height);
+                
+                // Gambar layer dari bawah ke atas
+                for (let i = 0; i < layers.length; i++) {
+                    const layer = layers[i];
+                    if (!layer.visible) continue;
+                    
+                    ctx.save();
+                    ctx.globalAlpha = layer.opacity;
+                    ctx.globalCompositeOperation = layer.blendMode;
+                    ctx.drawImage(layer.canvas, 0, 0);
+                    ctx.restore();
+                }
+                
+                // Gambar text objects (di atas layer)
+                ctx.save();
+                textObjects.forEach(obj => {
+                    if (obj.layerIndex === activeLayerIndex) {
+                        ctx.font = `${obj.fontStyle} ${obj.fontWeight} ${obj.fontSize}px ${obj.fontFamily}`;
+                        ctx.fillStyle = obj.color;
+                        ctx.globalAlpha = obj.opacity;
+                        ctx.textBaseline = 'top';
+                        ctx.fillText(obj.text, obj.x, obj.y);
+                    }
+                });
+                ctx.restore();
+                
+                // Reset composite dan alpha
+                ctx.globalAlpha = 1.0;
+                ctx.globalCompositeOperation = 'source-over';
+                
+                updateLayerUI();
+                
+                // Update selection box if text selected
+                if (selectedTextId && currentTool === 'move') {
+                    showSelectionBox();
+                } else {
+                    hideSelectionBox();
+                }
+            }
+
+            // Show selection box around selected text
+            function showSelectionBox() {
+                const textObj = textObjects.find(t => t.id === selectedTextId);
+                if (!textObj || textObj.layerIndex !== activeLayerIndex) {
+                    hideSelectionBox();
+                    return;
+                }
+
+                ctx.save();
+                ctx.font = `${textObj.fontStyle} ${textObj.fontWeight} ${textObj.fontSize}px ${textObj.fontFamily}`;
+                const metrics = ctx.measureText(textObj.text);
+                const textWidth = metrics.width;
+                const textHeight = textObj.fontSize;
+                ctx.restore();
+
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = rect.width / canvas.width;
+                const scaleY = rect.height / canvas.height;
+
+                selectionBox.style.display = 'block';
+                selectionBox.style.left = (rect.left + textObj.x * scaleX) + 'px';
+                selectionBox.style.top = (rect.top + textObj.y * scaleY) + 'px';
+                selectionBox.style.width = (textWidth * scaleX) + 'px';
+                selectionBox.style.height = (textHeight * scaleY) + 'px';
+            }
+
+            function hideSelectionBox() {
+                selectionBox.style.display = 'none';
+            }
+
+            // Update UI layer
+            function updateLayerUI() {
+                const container = document.getElementById('layer-list');
+                container.innerHTML = '';
+                
+                layers.forEach((layer, idx) => {
+                    const div = document.createElement('div');
+                    div.className = `layer-item ${idx === activeLayerIndex ? 'active' : ''}`;
+                    div.dataset.index = idx;
+                    
+                    // visibilitas
+                    const visSpan = document.createElement('span');
+                    visSpan.className = 'layer-vis';
+                    visSpan.textContent = layer.visible ? '👁️' : '👁️‍🗨️';
+                    visSpan.onclick = (e) => {
+                        e.stopPropagation();
+                        layer.visible = !layer.visible;
+                        render();
+                        setStatus(`Layer ${layer.name} ${layer.visible ? 'ditampilkan' : 'disembunyikan'}`);
+                    };
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'layer-name';
+                    nameSpan.textContent = layer.name;
+                    
+                    const opacitySpan = document.createElement('span');
+                    opacitySpan.className = 'layer-opacity';
+                    opacitySpan.textContent = Math.round(layer.opacity * 100) + '%';
+                    
+                    div.appendChild(visSpan);
+                    div.appendChild(nameSpan);
+                    div.appendChild(opacitySpan);
+                    
+                    div.onclick = () => {
+                        setActiveLayer(idx);
+                    };
+                    
+                    container.appendChild(div);
+                });
+                
+                document.getElementById('layer-count').textContent = layers.length;
+                
+                // update slider opacity di properti
+                if (layers[activeLayerIndex]) {
+                    document.getElementById('layer-opacity').value = layers[activeLayerIndex].opacity;
+                    document.getElementById('blend-mode').value = layers[activeLayerIndex].blendMode;
+                }
+            }
+
+            function setActiveLayer(idx) {
+                if (idx >= 0 && idx < layers.length) {
+                    activeLayerIndex = idx;
+                    selectedTextId = null;
+                    hideTextProperties();
+                    updateLayerUI();
+                    render();
+                    setStatus(`Layer aktif: ${layers[idx].name}`);
+                }
+            }
+
+            // Text properties panel
+            function showTextProperties(textObj) {
+                if (!textObj) return;
+                
+                textPropertiesPanel.style.display = 'block';
+                textContent.value = textObj.text;
+                textSize.value = textObj.fontSize;
+                textSizeValue.textContent = textObj.fontSize;
+                textFont.value = textObj.fontFamily;
+                
+                // Parse style
+                const style = textObj.fontStyle + (textObj.fontWeight !== 'normal' ? ' ' + textObj.fontWeight : '');
+                if (style.includes('bold') && style.includes('italic')) {
+                    textStyle.value = 'bold italic';
+                } else if (style.includes('bold')) {
+                    textStyle.value = 'bold';
+                } else if (style.includes('italic')) {
+                    textStyle.value = 'italic';
+                } else {
+                    textStyle.value = 'normal';
+                }
+                
+                textColor.value = textObj.color;
+            }
+
+            function hideTextProperties() {
+                textPropertiesPanel.style.display = 'none';
+            }
+
+            function updateSelectedText() {
+                if (!selectedTextId) return;
+                
+                const textObj = textObjects.find(t => t.id === selectedTextId);
+                if (!textObj) return;
+                
+                textObj.text = textContent.value;
+                textObj.fontSize = parseInt(textSize.value);
+                textObj.fontFamily = textFont.value;
+                
+                // Parse style
+                const style = textStyle.value;
+                if (style === 'bold italic') {
+                    textObj.fontWeight = 'bold';
+                    textObj.fontStyle = 'italic';
+                } else if (style === 'bold') {
+                    textObj.fontWeight = 'bold';
+                    textObj.fontStyle = 'normal';
+                } else if (style === 'italic') {
+                    textObj.fontWeight = 'normal';
+                    textObj.fontStyle = 'italic';
+                } else {
+                    textObj.fontWeight = 'normal';
+                    textObj.fontStyle = 'normal';
+                }
+                
+                textObj.color = textColor.value;
+                
+                saveState();
+                render();
+                setStatus('Teks diupdate');
+            }
+
+            // --- Tools state ---
+            let currentTool = 'brush';
+            let isDrawing = false;
+            let lastX = 0, lastY = 0;
+            let brushColor = '#0969da';
+            let brushSize = 5;
+            let brushOpacity = 1;
+
+            // UI Elements
+            const colorPicker = document.getElementById('color-picker');
+            const brushSizeInput = document.getElementById('brush-size');
+            const brushOpacityInput = document.getElementById('brush-opacity');
+            const sizeValue = document.getElementById('size-value');
+            const opacityValue = document.getElementById('opacity-value');
+            const currentColorSpan = document.getElementById('current-color');
+
+            // Tool buttons
+            const toolBrush = document.getElementById('tool-brush');
+            const toolEraser = document.getElementById('tool-eraser');
+            const toolFill = document.getElementById('tool-fill');
+            const toolText = document.getElementById('tool-text');
+            const toolMove = document.getElementById('tool-move');
+
+            function setTool(tool) {
+                currentTool = tool;
+                [toolBrush, toolEraser, toolFill, toolText, toolMove].forEach(btn => btn.classList.remove('active'));
+                
+                if (tool === 'brush') {
+                    toolBrush.classList.add('active');
+                    setStatus('Mode Brush - Seret untuk menggambar');
+                    brushPreview.style.display = 'block';
+                    canvasContainer.classList.remove('move-mode');
+                    selectedTextId = null;
+                    hideTextProperties();
+                } else if (tool === 'eraser') {
+                    toolEraser.classList.add('active');
+                    setStatus('Mode Eraser - Seret untuk menghapus');
+                    brushPreview.style.display = 'block';
+                    canvasContainer.classList.remove('move-mode');
+                    selectedTextId = null;
+                    hideTextProperties();
+                } else if (tool === 'fill') {
+                    toolFill.classList.add('active');
+                    setStatus('Mode Fill - Klik area untuk mengisi');
+                    brushPreview.style.display = 'none';
+                    canvasContainer.classList.remove('move-mode');
+                    selectedTextId = null;
+                    hideTextProperties();
+                } else if (tool === 'text') {
+                    toolText.classList.add('active');
+                    setStatus('Mode Text - Klik canvas untuk menambah teks');
+                    brushPreview.style.display = 'none';
+                    canvasContainer.classList.remove('move-mode');
+                    selectedTextId = null;
+                    hideTextProperties();
+                } else if (tool === 'move') {
+                    toolMove.classList.add('active');
+                    setStatus('Mode Move - Seret teks untuk memindahkan, double-click untuk edit');
+                    brushPreview.style.display = 'none';
+                    canvasContainer.classList.add('move-mode');
+                }
+                
+                hideSelectionBox();
+            }
+
+            toolBrush.onclick = () => setTool('brush');
+            toolEraser.onclick = () => setTool('eraser');
+            toolFill.onclick = () => setTool('fill');
+            toolText.onclick = () => setTool('text');
+            toolMove.onclick = () => setTool('move');
+
+            // Color picker
+            colorPicker.addEventListener('input', (e) => {
+                brushColor = e.target.value;
+                currentColorSpan.textContent = brushColor;
+            });
+
+            brushSizeInput.addEventListener('input', (e) => {
+                brushSize = parseInt(e.target.value);
+                sizeValue.textContent = brushSize;
+                updateBrushPreview();
+            });
+
+            brushOpacityInput.addEventListener('input', (e) => {
+                brushOpacity = parseFloat(e.target.value);
+                opacityValue.textContent = Math.round(brushOpacity * 100) + '%';
+                updateBrushPreview();
+            });
+
+            // Brush preview
+            function updateBrushPreview() {
+                brushPreview.style.width = brushSize + 'px';
+                brushPreview.style.height = brushSize + 'px';
+                brushPreview.style.borderColor = currentTool === 'eraser' ? '#ff0000' : brushColor;
+                brushPreview.style.backgroundColor = currentTool === 'eraser' ? 'rgba(255,0,0,0.2)' : 'transparent';
+            }
+
+            // Mouse move for brush preview
+            canvasArea.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                if (mouseX >= 0 && mouseX <= rect.width && mouseY >= 0 && mouseY <= rect.height) {
+                    brushPreview.style.display = (currentTool === 'brush' || currentTool === 'eraser') ? 'block' : 'none';
+                    brushPreview.style.left = (rect.left + mouseX) + 'px';
+                    brushPreview.style.top = (rect.top + mouseY) + 'px';
+                } else {
+                    brushPreview.style.display = 'none';
+                }
+            });
+
+            canvasArea.addEventListener('mouseleave', () => {
+                brushPreview.style.display = 'none';
+            });
+
+            // Find text at position
+            function findTextAt(x, y) {
+                // Check from last to first (topmost)
+                for (let i = textObjects.length - 1; i >= 0; i--) {
+                    const obj = textObjects[i];
+                    if (obj.layerIndex !== activeLayerIndex) continue;
+                    
+                    ctx.save();
+                    ctx.font = `${obj.fontStyle} ${obj.fontWeight} ${obj.fontSize}px ${obj.fontFamily}`;
+                    const metrics = ctx.measureText(obj.text);
+                    const textWidth = metrics.width;
+                    const textHeight = obj.fontSize;
+                    ctx.restore();
+                    
+                    if (x >= obj.x && x <= obj.x + textWidth && y >= obj.y && y <= obj.y + textHeight) {
+                        return obj;
+                    }
+                }
+                return null;
+            }
+
+            // --- Drawing functions ---
+            function startDrawing(e) {
+                e.preventDefault();
+                
+                const pos = getCanvasCoordinates(e);
+                const x = Math.max(0, Math.min(width, pos.x));
+                const y = Math.max(0, Math.min(height, pos.y));
+                
+                if (currentTool === 'text') {
+                    // Buka modal untuk teks baru
+                    modalText.value = 'Teks';
+                    modalFontSize.value = '24';
+                    modalFontFamily.value = 'Inter';
+                    modalFontWeight.value = 'normal';
+                    modalFontStyle.value = 'normal';
+                    modalColor.value = brushColor;
+                    modalOpacity.value = brushOpacity;
+                    
+                    textModal.classList.add('active');
+                    
+                    // Simpan posisi untuk teks baru
+                    textModal.dataset.x = x;
+                    textModal.dataset.y = y;
+                    textModal.dataset.mode = 'new';
+                    return;
+                }
+                
+                if (currentTool === 'move') {
+                    // Cari teks yang diklik
+                    const clickedText = findTextAt(x, y);
+                    
+                    if (clickedText) {
+                        selectedTextId = clickedText.id;
+                        isDraggingText = true;
+                        dragStartX = x;
+                        dragStartY = y;
+                        dragTextStartX = clickedText.x;
+                        dragTextStartY = clickedText.y;
+                        
+                        showTextProperties(clickedText);
+                        render();
+                        setStatus('Memindahkan teks...');
+                    } else {
+                        selectedTextId = null;
+                        hideTextProperties();
+                        render();
+                    }
+                    return;
+                }
+                
+                isDrawing = true;
+                lastX = x;
+                lastY = y;
+                
+                if (currentTool === 'fill') {
+                    floodFill(Math.floor(lastX), Math.floor(lastY));
+                    isDrawing = false;
+                } else if (currentTool === 'brush' || currentTool === 'eraser') {
+                    // Single dot for click
+                    drawDot(lastX, lastY);
+                }
+            }
+
+            function drawDot(x, y) {
+                const activeLayer = layers[activeLayerIndex];
+                const layerCtx = activeLayer.ctx;
+                
+                layerCtx.save();
+                
+                if (currentTool === 'eraser') {
+                    layerCtx.globalCompositeOperation = 'destination-out';
+                    layerCtx.fillStyle = '#000000'; // nilai tidak penting
+                } else {
+                    layerCtx.fillStyle = brushColor;
+                }
+                
+                layerCtx.globalAlpha = brushOpacity;
+                layerCtx.beginPath();
+                layerCtx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+                layerCtx.fill();
+                layerCtx.restore();
+                
+                render();
+            }
+
+            function draw(e) {
+                if (!isDrawing) return;
+                if (currentTool !== 'brush' && currentTool !== 'eraser') return;
+                
+                e.preventDefault();
+                const pos = getCanvasCoordinates(e);
+                let x = Math.max(0, Math.min(width, pos.x));
+                let y = Math.max(0, Math.min(height, pos.y));
+
+                const activeLayer = layers[activeLayerIndex];
+                const layerCtx = activeLayer.ctx;
+                
+                layerCtx.save();
+                
+                if (currentTool === 'eraser') {
+                    layerCtx.globalCompositeOperation = 'destination-out';
+                    layerCtx.strokeStyle = '#000000';
+                } else {
+                    layerCtx.strokeStyle = brushColor;
+                }
+                
+                layerCtx.globalAlpha = brushOpacity;
+                layerCtx.lineWidth = brushSize;
+                layerCtx.lineCap = 'round';
+                layerCtx.lineJoin = 'round';
+                
+                layerCtx.beginPath();
+                layerCtx.moveTo(lastX, lastY);
+                layerCtx.lineTo(x, y);
+                layerCtx.stroke();
+                
+                layerCtx.restore();
+
+                lastX = x;
+                lastY = y;
+                
+                render();
+            }
+
+            function moveText(e) {
+                if (!isDraggingText || !selectedTextId) return;
+                
+                e.preventDefault();
+                const pos = getCanvasCoordinates(e);
+                let x = Math.max(0, Math.min(width, pos.x));
+                let y = Math.max(0, Math.min(height, pos.y));
+                
+                const textObj = textObjects.find(t => t.id === selectedTextId);
+                if (textObj) {
+                    const deltaX = x - dragStartX;
+                    const deltaY = y - dragStartY;
+                    
+                    textObj.x = Math.max(0, Math.min(width, dragTextStartX + deltaX));
+                    textObj.y = Math.max(0, Math.min(height, dragTextStartY + deltaY));
+                    
+                    render();
+                }
+            }
+
+            function stopDrawing() {
+                if (isDrawing || isDraggingText) {
+                    saveState();
+                }
+                isDrawing = false;
+                isDraggingText = false;
+            }
+
+            function getCanvasCoordinates(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const x = (e.clientX - rect.left) * scaleX;
+                const y = (e.clientY - rect.top) * scaleY;
+                return { x, y };
+            }
+
+            // Flood fill
+            function floodFill(x, y) {
+                if (x < 0 || x >= width || y < 0 || y >= height) {
+                    setStatus('Klik di dalam canvas untuk fill');
+                    return;
+                }
+
+                const layer = layers[activeLayerIndex];
+                const layerCtx = layer.ctx;
+                const imageData = layerCtx.getImageData(0, 0, width, height);
+                const data = imageData.data;
+                
+                const targetColor = getPixelColor(data, x, y);
+                const fillColor = hexToRgba(brushColor, brushOpacity);
+
+                if (colorsMatch(targetColor, fillColor, 5)) return;
+
+                const stack = [[Math.floor(x), Math.floor(y)]];
+                const visited = new Set();
+                
+                while (stack.length) {
+                    const [cx, cy] = stack.pop();
+                    const key = cx + ',' + cy;
+                    
+                    if (visited.has(key)) continue;
+                    visited.add(key);
+                    
+                    const currentColor = getPixelColor(data, cx, cy);
+                    if (!colorsMatch(currentColor, targetColor, 10)) continue;
+
+                    setPixelColor(data, cx, cy, fillColor);
+
+                    if (cx > 0) stack.push([cx - 1, cy]);
+                    if (cx < width - 1) stack.push([cx + 1, cy]);
+                    if (cy > 0) stack.push([cx, cy - 1]);
+                    if (cy < height - 1) stack.push([cx, cy + 1]);
+                }
+
+                layerCtx.putImageData(imageData, 0, 0);
+                saveState();
+                render();
+                setStatus('Fill selesai');
+            }
+
+            function getPixelColor(data, x, y) {
+                const ix = Math.floor(x);
+                const iy = Math.floor(y);
+                if (ix < 0 || ix >= width || iy < 0 || iy >= height) {
+                    return [0, 0, 0, 0];
+                }
+                const i = (iy * width + ix) * 4;
+                return [data[i], data[i+1], data[i+2], data[i+3]];
+            }
+
+            function setPixelColor(data, x, y, color) {
+                const ix = Math.floor(x);
+                const iy = Math.floor(y);
+                if (ix < 0 || ix >= width || iy < 0 || iy >= height) return;
+                
+                const i = (iy * width + ix) * 4;
+                data[i] = color[0];
+                data[i+1] = color[1];
+                data[i+2] = color[2];
+                data[i+3] = color[3];
+            }
+
+            function colorsMatch(a, b, tolerance = 0) {
+                if (tolerance === 0) {
+                    return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+                } else {
+                    return Math.abs(a[0] - b[0]) <= tolerance &&
+                           Math.abs(a[1] - b[1]) <= tolerance &&
+                           Math.abs(a[2] - b[2]) <= tolerance &&
+                           Math.abs(a[3] - b[3]) <= tolerance;
+                }
+            }
+
+            function hexToRgba(hex, opacity) {
+                const r = parseInt(hex.slice(1,3), 16);
+                const g = parseInt(hex.slice(3,5), 16);
+                const b = parseInt(hex.slice(5,7), 16);
+                return [r, g, b, Math.round(opacity * 255)];
+            }
+
+            // Teks dengan modal
+            function addText(x, y, textData) {
+                const newText = {
+                    id: Date.now() + Math.random(),
+                    layerIndex: activeLayerIndex,
+                    x: x,
+                    y: y,
+                    text: textData.text,
+                    fontSize: textData.fontSize,
+                    fontFamily: textData.fontFamily,
+                    fontWeight: textData.fontWeight,
+                    fontStyle: textData.fontStyle,
+                    color: textData.color,
+                    opacity: textData.opacity
+                };
+                
+                textObjects.push(newText);
+                selectedTextId = newText.id;
+                
+                saveState();
+                render();
+                setStatus('Teks ditambahkan');
+                
+                if (currentTool === 'move') {
+                    showTextProperties(newText);
+                }
+            }
+
+            // Double click untuk edit teks
+            canvas.addEventListener('dblclick', (e) => {
+                if (currentTool !== 'move') return;
+                
+                const pos = getCanvasCoordinates(e);
+                const x = Math.max(0, Math.min(width, pos.x));
+                const y = Math.max(0, Math.min(height, pos.y));
+                
+                const clickedText = findTextAt(x, y);
+                if (clickedText) {
+                    selectedTextId = clickedText.id;
+                    
+                    // Isi modal dengan data teks
+                    modalText.value = clickedText.text;
+                    modalFontSize.value = clickedText.fontSize;
+                    modalFontFamily.value = clickedText.fontFamily;
+                    modalFontWeight.value = clickedText.fontWeight;
+                    modalFontStyle.value = clickedText.fontStyle;
+                    modalColor.value = clickedText.color;
+                    modalOpacity.value = clickedText.opacity;
+                    
+                    textModal.classList.add('active');
+                    textModal.dataset.mode = 'edit';
+                    textModal.dataset.id = clickedText.id;
+                }
+            });
+
+            // Modal handlers
+            modalCancel.addEventListener('click', () => {
+                textModal.classList.remove('active');
+            });
+
+            modalSave.addEventListener('click', () => {
+                const mode = textModal.dataset.mode;
+                const x = parseFloat(textModal.dataset.x);
+                const y = parseFloat(textModal.dataset.y);
+                
+                const textData = {
+                    text: modalText.value,
+                    fontSize: parseInt(modalFontSize.value),
+                    fontFamily: modalFontFamily.value,
+                    fontWeight: modalFontWeight.value,
+                    fontStyle: modalFontStyle.value,
+                    color: modalColor.value,
+                    opacity: parseFloat(modalOpacity.value)
+                };
+                
+                if (mode === 'new') {
+                    addText(x, y, textData);
+                } else if (mode === 'edit') {
+                    const id = parseInt(textModal.dataset.id);
+                    const textObj = textObjects.find(t => t.id === id);
+                    if (textObj) {
+                        Object.assign(textObj, textData);
+                        saveState();
+                        render();
+                        setStatus('Teks diedit');
+                    }
+                }
+                
+                textModal.classList.remove('active');
+            });
+
+            // Text properties panel handlers
+            textSize.addEventListener('input', () => {
+                textSizeValue.textContent = textSize.value;
+            });
+
+            updateTextBtn.addEventListener('click', updateSelectedText);
+
+            // --- Layer controls ---
+            document.getElementById('add-layer').addEventListener('click', () => {
+                const newLayer = createLayer(`Layer ${layers.length}`, width, height);
+                layers.push(newLayer);
+                activeLayerIndex = layers.length - 1;
+                saveState();
+                render();
+                setStatus(`Layer baru: ${newLayer.name}`);
+            });
+
+            document.getElementById('delete-layer').addEventListener('click', () => {
+                if (layers.length <= 1) {
+                    setStatus('Tidak bisa menghapus layer terakhir');
+                    return;
+                }
+                
+                if (layers[activeLayerIndex].isBackground) {
+                    setStatus('Tidak bisa menghapus layer Background');
+                    return;
+                }
+                
+                // Hapus juga text objects di layer ini
+                textObjects = textObjects.filter(obj => obj.layerIndex !== activeLayerIndex);
+                
+                layers.splice(activeLayerIndex, 1);
+                
+                if (activeLayerIndex >= layers.length) {
+                    activeLayerIndex = layers.length - 1;
+                }
+                
+                saveState();
+                render();
+                setStatus('Layer dihapus');
+            });
+
+            document.getElementById('move-up').addEventListener('click', () => {
+                if (activeLayerIndex < layers.length - 1) {
+                    [layers[activeLayerIndex], layers[activeLayerIndex+1]] = [layers[activeLayerIndex+1], layers[activeLayerIndex]];
+                    activeLayerIndex++;
+                    render();
+                    setStatus('Layer dipindah ke atas');
+                }
+            });
+
+            document.getElementById('move-down').addEventListener('click', () => {
+                if (activeLayerIndex > 0) {
+                    [layers[activeLayerIndex], layers[activeLayerIndex-1]] = [layers[activeLayerIndex-1], layers[activeLayerIndex]];
+                    activeLayerIndex--;
+                    render();
+                    setStatus('Layer dipindah ke bawah');
+                }
+            });
+
+            // Layer opacity slider
+            document.getElementById('layer-opacity').addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                layers[activeLayerIndex].opacity = val;
+                render();
+            });
+
+            document.getElementById('layer-opacity').addEventListener('change', () => {
+                saveState();
+            });
+
+            // Blend mode
+            document.getElementById('blend-mode').addEventListener('change', (e) => {
+                layers[activeLayerIndex].blendMode = e.target.value;
+                saveState();
+                render();
+            });
+
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filter = btn.dataset.filter;
+                    applyFilter(filter);
+                });
+            });
+
+            function applyFilter(type) {
+                const layer = layers[activeLayerIndex];
+                const layerCtx = layer.ctx;
+                const imageData = layerCtx.getImageData(0, 0, width, height);
+                const data = imageData.data;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i+3] === 0) continue;
+                    
+                    const r = data[i];
+                    const g = data[i+1];
+                    const b = data[i+2];
+                    let newR = r, newG = g, newB = b;
+
+                    if (type === 'grayscale') {
+                        const gray = 0.3 * r + 0.59 * g + 0.11 * b;
+                        newR = newG = newB = gray;
+                    } else if (type === 'invert') {
+                        newR = 255 - r;
+                        newG = 255 - g;
+                        newB = 255 - b;
+                    } else if (type === 'sepia') {
+                        newR = Math.min(255, 0.393 * r + 0.769 * g + 0.189 * b);
+                        newG = Math.min(255, 0.349 * r + 0.686 * g + 0.168 * b);
+                        newB = Math.min(255, 0.272 * r + 0.534 * g + 0.131 * b);
+                    } else if (type === 'brightness') {
+                        newR = Math.min(255, r + 40);
+                        newG = Math.min(255, g + 40);
+                        newB = Math.min(255, b + 40);
+                    }
+
+                    data[i] = newR;
+                    data[i+1] = newG;
+                    data[i+2] = newB;
+                }
+                
+                layerCtx.putImageData(imageData, 0, 0);
+                saveState();
+                render();
+                setStatus(`Filter ${type} diterapkan`);
+            }
+
+            // Undo/Redo
+            undoBtn.addEventListener('click', undo);
+            redoBtn.addEventListener('click', redo);
+
+            // Ekspor PNG
+            document.getElementById('export-png').addEventListener('click', () => {
+                // Render dengan text objects ke canvas utama
+                render();
+                
+                const link = document.createElement('a');
+                link.download = 'pufutara-paint.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                setStatus('Gambar diekspor');
+            });
+
+            // Event listeners canvas
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', (e) => {
+                if (currentTool === 'move' && isDraggingText) {
+                    moveText(e);
+                } else {
+                    draw(e);
+                }
+            });
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+
+            // Prevent context menu on canvas
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // Inisialisasi
+            updateBrushPreview();
+            render();
+            setActiveLayer(1);
+            setTool('brush');
+            
+            // Save initial state
+            saveState();
+        })();
+    </script>
+</body>
+</html>
