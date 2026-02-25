@@ -22,7 +22,8 @@
             color: #000000;
             line-height: 1.6;
             overflow-x: hidden;
-            height: 400vh; 
+            /* DISESUAIKAN: height auto agar mentok di footer, bukan 400vh lagi */
+            height: auto; 
         }
 
         .container {
@@ -41,6 +42,7 @@
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(10px);
             z-index: 1000;
+            animation: slideDown 0.8s ease forwards;
         }
 
         nav {
@@ -83,6 +85,7 @@
             text-align: center;
             z-index: 10;
             margin-top: 70px;
+            animation: fadeInScale 1.2s ease-out forwards;
         }
 
         .hero h1 {
@@ -113,6 +116,7 @@
             overflow: hidden;
             transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             z-index: 1;
+            cursor: pointer; /* Biar enak diklik */
         }
 
         .btn:hover {
@@ -145,12 +149,18 @@
             gap: 24px;
         }
 
-        /* Link Wrapper untuk Card */
         .card-link {
             text-decoration: none;
             color: inherit;
             display: block;
-            transition: transform 0.3s ease;
+            transition: all 0.7s cubic-bezier(0.165, 0.84, 0.44, 1);
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .card-link.show {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .card {
@@ -226,6 +236,15 @@
             .hero { height: 80vh; }
             .main-content { margin-top: 80vh; }
         }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -236,7 +255,7 @@
                 <div class="logo">PUFUTARA archive.</div>
                 <ul>
                     <li><a href="#">Layanan</a></li>
-                    <li><a href="#proyek-section">Proyek</a></li>
+                    <li><a href="#proyek-section" id="navProyek">Proyek</a></li>
                     <li><a href="#">Arsip</a></li>
                     <li><a href="#">Kontak</a></li>
                 </ul>
@@ -248,7 +267,7 @@
         <div class="container">
             <h1>Satu tempat, untuk semua.<br> Ini dia yang kalian cari.</h1>
             <p>Apa yang putra lakukan kalau megang pc? kalo ga deepseek ya pasti gemini. sampe muak yang lain ngeliat nya, tapi yang namanya minat. sedikit demi sedikit lama lama jadi bukit. dan inilah hasilnya.</p>
-            <a href="#proyek-section" class="btn">Coba liat Proyek nya dong!</a>
+            <a id="scrollBtn" class="btn">Mau liat? Scroll dong!</a>
         </div>
     </section>
 
@@ -258,7 +277,7 @@
                 <div class="container">
                     <div class="grid">
                         
-                        <a href="https://putraos.vercel.app" class="card-link">
+                        <a href="https://putraos.vercel.app" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">01 / Operating System</span>
                                 <h3>PufutaraOS</h3>
@@ -266,7 +285,7 @@
                             </div>
                         </a>
 
-                        <a href="workspace.html" class="card-link">
+                        <a href="workspace.html" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">02 / Productivity Hub</span>
                                 <h3>PufutaraWorkspace</h3>
@@ -274,7 +293,7 @@
                             </div>
                         </a>
 
-                        <a href="doc.html" class="card-link">
+                        <a href="doc.html" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">03 / Writing & Document</span>
                                 <h3>PufutaraWriter</h3>
@@ -282,7 +301,7 @@
                             </div>
                         </a>
 
-                        <a href="Paint.html" class="card-link">
+                        <a href="Paint.html" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">04 / Draw & Paint</span>
                                 <h3>PufutaraProPaint</h3>
@@ -290,7 +309,7 @@
                             </div>
                         </a>
 
-                        <a href="spin wheel.html" class="card-link">
+                        <a href="spin wheel.html" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">05 / Education</span>
                                 <h3>PufutaraSpinWheel</h3>
@@ -298,7 +317,7 @@
                             </div>
                         </a>
 
-                        <a href="https://pufuta.vercel.app" class="card-link">
+                        <a href="https://pufuta.vercel.app" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">06 / Website</span>
                                 <h3>PufutaraWeb</h3>
@@ -306,7 +325,7 @@
                             </div>
                         </a>
 
-                        <a href="doc.html" class="card-link">
+                        <a href="doc.html" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">07 / Relax</span>
                                 <h3>PufutaraZenType</h3>
@@ -314,7 +333,7 @@
                             </div>
                         </a>
 
-                        <a href="todo.html" class="card-link">
+                        <a href="todo.html" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">08 / Focus List</span>
                                 <h3>PufutaraToDo</h3>
@@ -322,7 +341,7 @@
                             </div>
                         </a>
 
-                        <a href="habit tracker.html" class="card-link">
+                        <a href="habit tracker.html" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">09 / Habits</span>
                                 <h3>PufutaraHabitTracker</h3>
@@ -330,7 +349,7 @@
                             </div>
                         </a>
 
-                        <a href="https://kanay.vercel.app" class="card-link">
+                        <a href="https://kanay.vercel.app" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">10 / BEM Nostalgia</span>
                                 <h3>PufutaraWeb Old</h3>
@@ -338,7 +357,7 @@
                             </div>
                         </a>
 
-                        <a href="index.html" class="card-link">
+                        <a href="index.html" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">11 / The Center</span>
                                 <h3>PufutaraArchive</h3>
@@ -346,7 +365,7 @@
                             </div>
                         </a>
 
-                        <a href="https://pufuta.vercel.app/daftargame.html" class="card-link">
+                        <a href="https://pufuta.vercel.app/daftargame.html" class="card-link" target="_blank">
                             <div class="card">
                                 <span class="tag">12 / You Know lah</span>
                                 <h3>PufutaraMiniGames</h3>
@@ -399,11 +418,36 @@
     <script>
         const zoomElement = document.getElementById('zoomElement');
         const heroSec = document.getElementById('heroSec');
+        const cardLinks = document.querySelectorAll('.card-link');
+        const scrollBtn = document.getElementById('scrollBtn');
+        const navProyek = document.getElementById('navProyek');
+
+        // FUNGSI UNTUK SCROLL DENGAN OFFSET (Naikin dikit)
+        function smoothScrollWithOffset(targetId, offset) {
+            const targetElement = document.getElementById(targetId);
+            const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+            window.scrollTo({
+                top: targetPosition - offset, // Offset ini yang bikin posisi "naik dikit"
+                behavior: 'smooth'
+            });
+        }
+
+        // Event listener buat tombol hero
+        scrollBtn.addEventListener('click', () => {
+            smoothScrollWithOffset('proyek-section', 80); // 80px adalah jarak naiknya
+        });
+
+        // Event listener buat link navbar
+        navProyek.addEventListener('click', (e) => {
+            e.preventDefault();
+            smoothScrollWithOffset('proyek-section', 80);
+        });
 
         window.addEventListener('scroll', () => {
             const scrollPos = window.scrollY;
             const windowHeight = window.innerHeight;
             
+            // Animasi Hero & Zoom
             let progress = scrollPos / (windowHeight * 0.85);
             if (progress > 1) progress = 1;
 
@@ -412,7 +456,19 @@
 
             heroSec.style.opacity = 1 - (progress * 1.4);
             heroSec.style.transform = `translateY(${-scrollPos * 0.25}px)`;
+
+            // Reveal Animasi Card
+            cardLinks.forEach((card, index) => {
+                const cardTop = card.getBoundingClientRect().top;
+                if (cardTop < windowHeight - 50) {
+                    setTimeout(() => {
+                        card.classList.add('show');
+                    }, index % 4 * 100); 
+                }
+            });
         });
+
+        window.dispatchEvent(new Event('scroll'));
     </script>
 </body>
 </html>
