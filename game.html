@@ -133,7 +133,7 @@
 
     <div id="main-menu">
         <div class="menu-info">
-            <div class="menu-ver">V.7.0 SWARM & SHOOTER UPDATE</div>
+            <div class="menu-ver">V.8.0 ULTIMATE SWARM</div>
             <div class="menu-title">NEON SLAYER</div>
             <div class="menu-desc">
                 Survive the endless swarm.<br>
@@ -181,7 +181,7 @@
 
     <div id="level-up-modal">
         <h2 style="color:white; letter-spacing:3px; margin-bottom:10px;">SYSTEM UPGRADE</h2>
-        <p style="color:#00ffcc; font-size: 14px; margin-bottom: 30px;">(Passive: HP & ATK Increased by 10%)</p>
+        <p style="color:#00ffcc; font-size: 14px; margin-bottom: 30px;">(Passive: All Stats Increased by 12%)</p>
         <div class="card-wrapper" id="cards-box"></div>
     </div>
     
@@ -213,10 +213,12 @@
             // Skills
             unlockedBlink: false,
             unlockedWave: false,
+            unlockedRicochet: false,
             unlockedUlt: false,
             cdE: 0, maxCdE: 300, 
             cdRMB: 0, maxCdRMB: 180,
             cdQ: 0, maxCdQ: 660,
+            ricochetCd: 0,
             isSwinging: false, swingTimer: 0, maxSwingTime: 10, swingDir: 1,
             magnetRange: 200, slashRange: 115,
             // Stats Tracking
@@ -224,7 +226,6 @@
             orbitals: [], droneLevel: 0, droneCd: 0, droneMaxCd: 60, staticFieldLevel: 0
         };
 
-        // Ditambahkan enemyProjectiles untuk serangan musuh bertipe jarak jauh
         let enemies = [], projectiles = [], enemyProjectiles = [], particles = [], orbs = [], damages = [], blinkTrails = [], boss = null;
         const keys = {};
 
@@ -282,12 +283,10 @@
         window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
         window.addEventListener('mousedown', e => { if(gameState === "PLAYING") { if(e.button === 0) skillSlash(); if(e.button === 2) skillBlink(); } });
 
-        // Fungsi Hit Entity Ditingkatkan Dengan Sistem Knockback
         function hitEntity(e, dmg, knockback = 0, srcX = player.x, srcY = player.y) {
             e.hp -= dmg;
             damages.push({ x: e.x, y: e.y - 20, val: Math.floor(dmg), life: 1, color: '#fff' });
             
-            // Aplikasi knockback
             if(knockback > 0 && e.type !== 'boss') {
                 let kbAngle = Math.atan2(e.y - srcY, e.x - srcX);
                 e.x += Math.cos(kbAngle) * knockback;
@@ -313,7 +312,7 @@
                 const a = Math.atan2(e.y - player.y, e.x - player.x);
                 let diff = a - player.angle; while(diff > Math.PI) diff -= Math.PI*2; while(diff < -Math.PI) diff += Math.PI*2;
                 if(d < player.slashRange + e.size && Math.abs(diff) < 1.3) {
-                    hitEntity(e, 40 * player.dmgMult, 25, player.x, player.y); // Knockback Kuat!
+                    hitEntity(e, 40 * player.dmgMult, 25, player.x, player.y);
                     shake = 5;
                 }
             });
@@ -355,6 +354,16 @@
             if(boss) hitEntity(boss, 500 * player.dmgMult, 0);
         }
 
+        function skillRicochet() {
+            let nearest = null; let minD = 700;
+            [...enemies, boss].forEach(e => { if(!e) return; const d = Math.hypot(e.x-player.x, e.y-player.y); if(d<minD){minD=d; nearest=e;} });
+            
+            if(nearest) {
+                const a = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+                projectiles.push({ type: 'ricochet', x: player.x, y: player.y, vx: Math.cos(a)*12, vy: Math.sin(a)*12, life: 120, damage: 30*player.dmgMult, size: 8, bounces: 4, lastHit: null });
+            }
+        }
+
         function spawnEnemy() {
             if(boss || gameState !== "PLAYING") return;
             const angle = Math.random() * Math.PI * 2;
@@ -364,10 +373,11 @@
             const r = Math.random();
             let type = 'basic'; 
             
-            // Penambahan Musuh Baru "Shooter" level 7
+            let shooterCount = enemies.filter(e => e.type === 'shooter').length;
+
             if (player.level >= 10 && r < 0.15) type = 'seeker';
             else if (player.level >= 7 && r < 0.30) type = 'tank';
-            else if (player.level >= 7 && r < 0.50) type = 'shooter'; // 20% Peluang
+            else if (player.level >= 7 && r < 0.50 && shooterCount < 5) type = 'shooter'; // Max 5 Shooters
             else if (player.level >= 4 && r < 0.70) type = 'runner';
             
             let e;
@@ -405,6 +415,11 @@
             if(shake > 0) shake *= 0.9;
             if(player.cdRMB > 0) player.cdRMB--; if(player.cdE > 0) player.cdE--; if(player.cdQ > 0) player.cdQ--;
             if(comboTimer > 0) comboTimer--; else combo = 0;
+
+            if(player.unlockedRicochet) {
+                player.ricochetCd--;
+                if(player.ricochetCd <= 0) { skillRicochet(); player.ricochetCd = 100; }
+            }
 
             document.getElementById('combo-value').innerText = combo;
             document.getElementById('combo-container').style.opacity = combo > 0 ? 1 : 0;
@@ -458,7 +473,6 @@
             }
 
             frame++; 
-            // Spawn Rate Musuh Bertambah 20% per level (berubah dari 1.15 ke 1.20)
             let spawnInterval = Math.max(8, Math.floor(45 / Math.pow(1.20, player.level - 1)));
             if(frame % spawnInterval === 0) spawnEnemy();
 
@@ -469,14 +483,18 @@
                 let ang = Math.atan2(player.y - e.y, player.x - e.x); 
                 
                 if(e.type === 'shooter') {
-                    // Berhenti di jarak 350, Menjauh kalau terlalu dekat < 250
                     if(dist > 350) { e.x += Math.cos(ang)*e.speed; e.y += Math.sin(ang)*e.speed; }
                     else if(dist < 250) { e.x -= Math.cos(ang)*e.speed; e.y -= Math.sin(ang)*e.speed; }
                     
                     if(e.shootCd > 0) e.shootCd--;
                     else {
                         e.shootCd = 100 + Math.random()*50;
-                        enemyProjectiles.push({ x: e.x, y: e.y, speed: 2.5, life: 250, size: 8, color: 'red', damage: 15, isHoming: true });
+                        // Tembakan lurus (tidak homing), kecepatan agak sedikit dipercepat agar menantang
+                        enemyProjectiles.push({ 
+                            x: e.x, y: e.y, 
+                            vx: Math.cos(ang) * 4.5, vy: Math.sin(ang) * 4.5, 
+                            life: 250, size: 8, color: 'red', damage: 15 
+                        });
                     }
                 } else {
                     e.x += Math.cos(ang)*e.speed; e.y += Math.sin(ang)*e.speed;
@@ -488,17 +506,31 @@
             // Logika Proyektil Player
             projectiles.forEach((p, i) => {
                 p.x += p.vx; p.y += p.vy; p.life--;
-                [...enemies, boss].forEach(e => { if(e && Math.hypot(p.x-e.x, p.y-e.y) < e.size + p.size) { hitEntity(e, p.damage, 15, p.x, p.y); if(p.type !== 'wave') p.life = 0; } });
+                
+                if(p.type === 'ricochet') {
+                    [...enemies, boss].forEach(e => {
+                        if(e && e !== p.lastHit && Math.hypot(p.x-e.x, p.y-e.y) < e.size + p.size) {
+                            hitEntity(e, p.damage, 10, p.x, p.y);
+                            p.lastHit = e; p.bounces--;
+                            let next = null; let minD = 400;
+                            [...enemies, boss].forEach(e2 => { if(e2 && e2 !== e && Math.hypot(e2.x-p.x, e2.y-p.y) < minD) { minD = Math.hypot(e2.x-p.x, e2.y-p.y); next = e2; } });
+                            if(next && p.bounces > 0) {
+                                const a = Math.atan2(next.y - p.y, next.x - p.x);
+                                p.vx = Math.cos(a)*12; p.vy = Math.sin(a)*12;
+                            } else p.life = 0;
+                        }
+                    });
+                } else {
+                    [...enemies, boss].forEach(e => { if(e && Math.hypot(p.x-e.x, p.y-e.y) < e.size + p.size) { hitEntity(e, p.damage, 15, p.x, p.y); if(p.type !== 'wave') p.life = 0; } });
+                }
+                
                 if(p.life <= 0) projectiles.splice(i, 1);
             });
 
-            // Logika Proyektil Musuh (Homing ke Player)
+            // Logika Proyektil Musuh (LURUS BUKAN HOMING)
             enemyProjectiles.forEach((p, i) => {
-                if(p.isHoming) {
-                    let a = Math.atan2(player.y - p.y, player.x - p.x);
-                    p.x += Math.cos(a) * p.speed;
-                    p.y += Math.sin(a) * p.speed;
-                }
+                p.x += p.vx;
+                p.y += p.vy;
                 p.life--;
                 if(Math.hypot(player.x - p.x, player.y - p.y) < player.size + p.size) {
                     player.hp -= p.damage;
@@ -518,9 +550,13 @@
                         player.xp += o.value; 
                         if(player.xp >= player.maxXp) { 
                             player.xp = 0; player.maxXp *= 1.4; 
-                            player.maxHp = Math.floor(player.maxHp * 1.1);
+                            
+                            // ALL STATS UP 12%
+                            player.maxHp = Math.floor(player.maxHp * 1.12);
                             player.hp = player.maxHp; 
-                            player.dmgMult *= 1.1;
+                            player.dmgMult *= 1.12;
+                            player.speed = Math.min(12, player.speed * 1.12); // Speed naik tapi dibatasi max 12
+                            player.cdMult = Math.max(0.3, player.cdMult * 0.88); // CD makin cepat (12% reduction), dibatasi min 30% dari awal
                             
                             player.level++; 
                             if(player.level % 10 === 0 && player.level < 30) spawnBoss();
@@ -574,6 +610,10 @@
                 player.unlockedWave = true;
                 showUnlockNotification("SKILL UNLOCKED", "Energy Wave (Projectile)", "COBA WAVE!", "Tekan tombol E sekarang");
             }
+            else if(player.level === 6) {
+                player.unlockedRicochet = true;
+                showUnlockNotification("SKILL UNLOCKED", "Ricochet Disc (Passive)", "NEW WEAPON!", "Otomatis memantul ke musuh");
+            }
             else if(player.level === 10) {
                 player.unlockedUlt = true;
                 showUnlockNotification("ULTIMATE UNLOCKED", "DOOMSDAY (NUKE)", "TEKAN Q", "Membunuh semua musuh di layar");
@@ -626,6 +666,7 @@
                 ctx.save();
                 if(p.type === 'wave') { ctx.shadowBlur = 20; ctx.shadowColor = 'white'; ctx.strokeStyle = 'white'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, p.angle-1, p.angle+1); ctx.stroke(); }
                 else if(p.type === 'drone') { ctx.fillStyle = '#ffffff'; ctx.shadowBlur = 10; ctx.shadowColor='white'; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); }
+                else if(p.type === 'ricochet') { ctx.fillStyle = '#ff00ff'; ctx.shadowBlur = 10; ctx.shadowColor='#ff00ff'; ctx.beginPath(); ctx.moveTo(p.x, p.y-5); ctx.lineTo(p.x+5, p.y+5); ctx.lineTo(p.x-5, p.y+5); ctx.fill(); }
                 ctx.restore();
             });
 
