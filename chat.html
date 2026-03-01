@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pufutara Chat - Monokrom</title>
+    <title>Pufutara Chat - Monokrom + Color Names</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
@@ -52,7 +52,8 @@
         /* Pesan Kita (Hitam elegan) */
         .msg-me { background: #111111; align-self: flex-end; border-top-right-radius: 2px; color: #ffffff; }
         
-        .msg-sender { font-size: 0.75rem; font-weight: bold; margin-bottom: 4px; }
+        /* Nama Pengirim tetap mencolok */
+        .msg-sender { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; }
         .msg-text { word-wrap: break-word; }
         .msg-time { font-size: 0.65rem; align-self: flex-end; margin-top: 5px; }
         .msg-other .msg-time { color: #aaa; }
@@ -159,8 +160,12 @@
         let isTyping = false, typingTimer;
         let selectedMsg = null, replyingTo = null; 
 
-        // Warna Avatar diubah jadi nuansa Monokrom (Abu-abu gelap ke hitam)
-        const colors = ['#111111', '#222222', '#333333', '#444444', '#555555', '#1a1a1a', '#2b2b2b', '#3c3c3c'];
+        // Warna Avatar dan Nama diubah jadi TERANG MENColok agar kelihatan di background putih
+        const colors = [
+            '#FF3B30', '#34C759', '#007AFF', '#FF9500', 
+            '#AF52DE', '#FF2D55', '#5856D6', '#00C7BE', 
+            '#E51C23', '#3F51B5', '#E91E63', '#009688'
+        ];
         function getColor(str) {
             let hash = 0; for(let i=0; i<str.length; i++) hash = str.charCodeAt(i) + ((hash<<5)-hash);
             return colors[Math.abs(hash)%colors.length];
@@ -174,7 +179,8 @@
             if (session) { 
                 currentUser = session.user; 
                 myEmail = currentUser.email;
-                showChatList(); 
+                // FIX: Langsung masuk ke Grup Global saat login berhasil
+                openRoom('global'); 
                 setupRealtime();
             } else { showAuthScreen(); }
         }
