@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chicken Run V10 - Custom Names</title>
+    <title>Chicken Run V16 - Animasi Tabrakan</title>
     <style>
         body {
             margin: 0; padding: 0; background-color: #222; display: flex;
@@ -45,6 +45,9 @@
 </head>
 <body>
 
+    <audio id="bgMusic" src="youtube_24018.mp3" loop></audio>
+    <audio id="deathSound" src="tamatlah-sudah.mp3"></audio>
+
     <div id="gameContainer">
         <canvas id="gameCanvas" width="800" height="400"></canvas>
         <div id="ui">
@@ -82,6 +85,9 @@
         const titleText = document.getElementById('titleText');
         const modeBtn = document.getElementById('modeBtn');
         const nameInputsDiv = document.getElementById('nameInputs');
+        
+        const bgMusic = document.getElementById('bgMusic'); 
+        const deathSound = document.getElementById('deathSound'); 
 
         let isPlaying = false;
         let animationId;
@@ -110,10 +116,10 @@
         ];
         
         const allPlayers = [
-            { id: 1, emoji: '🐔', key: 'q', y: 330, grav: 1, alive: true, invincible: false, invTimer: 0, x: 50, name: '' },
-            { id: 2, emoji: '🐧', key: 'p', y: 330, grav: 1, alive: true, invincible: false, invTimer: 0, x: 100, name: '' },
-            { id: 3, emoji: '🐥', key: 'z', y: 330, grav: 1, alive: true, invincible: false, invTimer: 0, x: 150, name: '' },
-            { id: 4, emoji: '🐸', key: 'm', y: 330, grav: 1, alive: true, invincible: false, invTimer: 0, x: 200, name: '' }
+            { id: 1, emoji: '🐔', key: 'q', y: 330, grav: 1, alive: true, invincible: false, invTimer: 0, x: 150, name: '' },
+            { id: 2, emoji: '🐧', key: 'p', y: 330, grav: 1, alive: true, invincible: false, invTimer: 0, x: 105, name: '' },
+            { id: 3, emoji: '🐥', key: 'z', y: 330, grav: 1, alive: true, invincible: false, invTimer: 0, x: 60, name: '' },
+            { id: 4, emoji: '🐸', key: 'm', y: 330, grav: 1, alive: true, invincible: false, invTimer: 0, x: 15, name: '' }
         ];
         let activePlayers = [];
 
@@ -122,7 +128,6 @@
             modeBtn.innerText = isKingMode ? "Mode: Raja 👑" : "Mode: Klasik 🎮";
         }
 
-        // Transisi ke layar input nama
         function showNameInput(num) {
             selectedPlayerCount = num;
             menuScreen.style.display = 'none';
@@ -152,7 +157,6 @@
             ui.style.display = 'none';
             activePlayers = JSON.parse(JSON.stringify(allPlayers.slice(0, selectedPlayerCount)));
             
-            // Simpan nama pemain dari input
             for(let i = 0; i < selectedPlayerCount; i++) {
                 let inputVal = document.getElementById(`nameP${i+1}`).value.trim();
                 activePlayers[i].name = inputVal !== '' ? inputVal : `Pemain ${i+1}`;
@@ -168,16 +172,30 @@
             stealCooldown = 0;
 
             isPlaying = true;
+            
+            bgMusic.currentTime = 0;
+            bgMusic.play().catch(e => console.log("Lagu diblokir browser, klik layar dulu untuk memulai audio"));
+
             gameLoop();
         }
 
         function gameOver(winnerMsg) {
             isPlaying = false;
             cancelAnimationFrame(animationId);
+            bgMusic.pause();
+
             ui.style.display = 'flex';
             menuScreen.style.display = 'flex';
             nameScreen.style.display = 'none';
             titleText.innerText = winnerMsg;
+        }
+
+        function killPlayer(p) {
+            if (p.alive) {
+                p.alive = false;
+                deathSound.currentTime = 0; 
+                deathSound.play().catch(e => console.log("SFX Mati diblokir"));
+            }
         }
 
         function drawBackground() {
@@ -217,9 +235,8 @@
         }
 
         function spawnPowerUp() {
-            // Hanya menyisakan Bintang Kebal dan Tukar Posisi (Sabotase dihapus)
-            if (frameCount > 0 && frameCount % 350 === 0) {
-                let types = ['⭐', '🔄'];
+            if (frameCount > 0 && frameCount % 300 === 0) {
+                let types = ['⭐', '🔄', '💨', '💨']; 
                 powerUps.push({ type: types[Math.floor(Math.random() * types.length)], x: canvas.width, y: Math.random() * 200 + 80, size: 35 });
             }
             if (frameCount % 150 === 0) { 
@@ -229,6 +246,8 @@
             }
         }
 
+        function getBoxType() { return Math.random() > 0.5 ? 'box' : 'blocker'; }
+
         function spawnObstacle() {
             let spawnRate = Math.max(40, 90 - Math.floor(speed * 3)); 
             if (frameCount % spawnRate === 0) {
@@ -237,30 +256,36 @@
                     return; 
                 }
 
-                let pattern = Math.floor(Math.random() * 6); 
+                let pattern = Math.floor(Math.random() * 7); 
                 let startX = canvas.width;
 
                 if (pattern === 0) {
-                    let isTop = Math.random() > 0.5; obstacles.push({ type: 'box', x: startX, y: isTop ? 40 : 320, w: 40, h: 40, color: '#F44336' });
+                    let isTop = Math.random() > 0.5; obstacles.push({ type: getBoxType(), x: startX, y: isTop ? 40 : 320, w: 40, h: 40, color: '#F44336' });
                 } 
                 else if (pattern === 1) obstacles.push({ type: 'moving', x: startX, y: 150, w: 30, h: 60, color: '#00BCD4', dy: 3 });
                 else if (pattern === 2) obstacles.push({ type: 'gear', x: startX, y: 180, w: 40, h: 40, angle: 0 });
                 else if (pattern === 3) {
-                    obstacles.push({ type: 'ghost_box', x: startX, y: 191, w: 250, h: 18, color: '#607D8B' });
-                    obstacles.push({ type: 'box', x: startX + 100, y: Math.random() > 0.5 ? 40 : 330, w: 30, h: 30, color: '#F44336' });
+                    obstacles.push({ type: 'platform', x: startX, y: 191, w: 250, h: 25 });
+                    obstacles.push({ type: getBoxType(), x: startX + 100, y: 191 - 30, w: 30, h: 30, color: '#F44336' });
                 }
                 else if (pattern === 4) {
-                    obstacles.push({ type: 'box', x: startX, y: 40, w: 30, h: 60, color: '#F44336' }); obstacles.push({ type: 'box', x: startX + 150, y: 300, w: 30, h: 60, color: '#F44336' });
+                    obstacles.push({ type: getBoxType(), x: startX, y: 40, w: 30, h: 60, color: '#F44336' }); 
+                    obstacles.push({ type: getBoxType(), x: startX + 150, y: 300, w: 30, h: 60, color: '#F44336' });
                 }
                 else if (pattern === 5) {
                     let isTopHole = Math.random() > 0.5; let holeSize = 150 + Math.random() * 100; 
                     obstacles.push({ type: 'hole', x: startX, y: isTopHole ? 0 : 360, w: holeSize, h: 40 }); 
+                }
+                else if (pattern === 6) {
+                    obstacles.push({ type: 'platform', x: startX, y: 120, w: 150, h: 25 });
+                    obstacles.push({ type: 'platform', x: startX + 220, y: 250, w: 150, h: 25 });
                 }
             }
         }
 
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let map = maps[currentMapIndex]; 
             
             let cycle = frameCount % 1000;
             if (cycle > 500 && cycle < 950) nightAlpha = Math.min(nightAlpha + 0.005, 0.7); 
@@ -311,10 +336,21 @@
                 }
                 else {
                     obs.x -= speed;
-                    if (obs.type === 'box' || obs.type === 'ghost_box') {
+                    if (obs.type === 'box') {
                         ctx.fillStyle = obs.color; ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
                         ctx.strokeStyle = "black"; ctx.lineWidth = 2; ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
                     } 
+                    else if (obs.type === 'blocker') {
+                        ctx.fillStyle = map.ground; ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+                        ctx.strokeStyle = map.floor; ctx.lineWidth = 3; 
+                        ctx.strokeRect(obs.x + 2, obs.y + 2, obs.w - 4, obs.h - 4); 
+                    }
+                    else if (obs.type === 'platform') {
+                        ctx.fillStyle = map.ground; ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+                        ctx.fillStyle = map.floor;
+                        ctx.fillRect(obs.x, obs.y, obs.w, 6); ctx.fillRect(obs.x, obs.y + obs.h - 6, obs.w, 6); 
+                        ctx.strokeStyle = "black"; ctx.lineWidth = 2; ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+                    }
                     else if (obs.type === 'moving') {
                         obs.y += obs.dy; if (obs.y <= 40 || obs.y + obs.h >= 360) obs.dy *= -1; 
                         ctx.fillStyle = obs.color; ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
@@ -325,7 +361,7 @@
                         ctx.font = "45px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("⚙️", 0, 0); ctx.restore();
                     }
                     else if (obs.type === 'hole') {
-                        let map = maps[currentMapIndex]; ctx.fillStyle = map.bg; ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+                        ctx.fillStyle = map.bg; ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
                         if (nightAlpha > 0) { ctx.fillStyle = `rgba(10, 10, 40, ${nightAlpha})`; ctx.fillRect(obs.x, obs.y, obs.w, obs.h); }
                     }
                 }
@@ -342,12 +378,17 @@
                         if (p.x < pu.x + pu.size && p.x + 30 > pu.x && p.y < floatY + pu.size && p.y + 30 > floatY) {
                             pu.taken = true;
                             if (pu.type === '⭐') { p.invincible = true; p.invTimer = 300; } 
+                            else if (pu.type === '💨') { 
+                                p.x += 100; 
+                                if (p.x > canvas.width - 50) p.x = canvas.width - 50; 
+                            }
                             else if (pu.type === '🔄') {
                                 let others = activePlayers.filter(other => other.alive && other.id !== p.id);
                                 if (others.length > 0) {
                                     let target = others[Math.floor(Math.random() * others.length)];
-                                    let tempY = p.y; let tempGrav = p.grav;
-                                    p.y = target.y; p.grav = target.grav; target.y = tempY; target.grav = tempGrav;
+                                    let tempY = p.y; let tempGrav = p.grav; let tempX = p.x;
+                                    p.y = target.y; p.grav = target.grav; p.x = target.x;
+                                    target.y = tempY; target.grav = tempGrav; target.x = tempX;
                                 }
                             }
                         }
@@ -364,6 +405,7 @@
             activePlayers.forEach(p => {
                 if (p.alive) {
                     p.y += p.grav * 10; 
+                    p.isBlocked = false;
                     
                     if (p.invincible) {
                         p.invTimer--; if (p.invTimer <= 0) p.invincible = false;
@@ -372,52 +414,106 @@
                     }
                     
                     let overHoleTop = false; let overHoleBottom = false;
+                    let platformTopY = null; let platformBottomY = null;
+                    let hitBox = 8;
+
                     obstacles.forEach(obs => {
                         if (obs.type === 'hole') {
                             if (p.x + 15 > obs.x && p.x + 15 < obs.x + obs.w) {
                                 if (obs.y === 0) overHoleTop = true; if (obs.y === 360) overHoleBottom = true;
                             }
                         }
+                        
+                        if (obs.type === 'blocker') {
+                            if (p.y + 30 - hitBox > obs.y && p.y + hitBox < obs.y + obs.h) {
+                                if (p.x + 30 > obs.x && p.x < obs.x + obs.w) {
+                                    if (!p.invincible) {
+                                        p.x = obs.x - 30; // Kedorong balok
+                                        p.isBlocked = true; // Tandai bahwa pemain lagi nempel balok
+                                    }
+                                }
+                            }
+                        }
+
+                        if (obs.type === 'platform') {
+                            if (p.x + 30 - hitBox > obs.x && p.x + hitBox < obs.x + obs.w) {
+                                if (p.grav > 0 && p.y + 30 - (p.grav * 10) <= obs.y + 15) platformTopY = obs.y;
+                                if (p.grav < 0 && p.y - (p.grav * 10) >= obs.y + obs.h - 15) platformBottomY = obs.y + obs.h;
+                                
+                                if (platformTopY === null && platformBottomY === null) {
+                                    if (p.y + 30 - hitBox > obs.y && p.y + hitBox < obs.y + obs.h) {
+                                        if (!p.invincible) killPlayer(p); 
+                                    }
+                                }
+                            }
+                        }
                     });
 
-                    if (!overHoleBottom && p.y > 330) p.y = 330; 
-                    if (!overHoleTop && p.y < 40) p.y = 40;     
+                    if (platformTopY !== null) p.y = platformTopY - 30; 
+                    else if (platformBottomY !== null) p.y = platformBottomY;   
+                    else {
+                        if (!overHoleBottom && p.y > 330) p.y = 330; 
+                        if (!overHoleTop && p.y < 40) p.y = 40;     
+                    }
+
+                    // --- BAGIAN MENGGAMBAR PEMAIN (DENGAN ANIMASI HIT) ---
+                    let drawX = p.x;
+                    let drawY = p.y;
+
+                    // Kalau lagi nyangkut/nempel balok, kasih animasi getar
+                    if (p.isBlocked) {
+                        drawX += (Math.random() * 6 - 3); // Getar kiri-kanan
+                        drawY += (Math.random() * 6 - 3); // Getar atas-bawah
+                        
+                        // Gambar efek ledakan pas di titik tabrakan
+                        ctx.font = "20px Arial";
+                        ctx.fillText("💥", p.x + 25, p.y + 20);
+                    }
 
                     if (isKingMode && p.id === kingId) {
-                        ctx.font = "20px Arial"; ctx.fillText("👑", p.x + 5, p.y);
+                        ctx.font = "20px Arial"; ctx.fillText("👑", drawX + 5, drawY);
                     }
                     
-                    // Render Emoji
-                    ctx.font = "30px Arial";
-                    ctx.fillText(p.emoji, p.x, p.y + 30);
+                    ctx.font = "30px Arial"; ctx.fillText(p.emoji, drawX, drawY + 30);
 
-                    // Render Nama Pemain
                     ctx.font = "bold 14px 'Comic Sans MS', cursive";
-                    ctx.textAlign = "center";
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = "black";
-                    ctx.strokeText(p.name, p.x + 15, p.y + 50); // Bikin outline hitam
-                    ctx.fillStyle = "white";
-                    ctx.fillText(p.name, p.x + 15, p.y + 50);   // Tulisan putih
-                    ctx.textAlign = "left"; // Reset alignment
+                    ctx.textAlign = "center"; ctx.lineWidth = 3;
+                    ctx.strokeStyle = "black"; ctx.strokeText(p.name, drawX + 15, drawY + 50);
+                    ctx.fillStyle = "white"; ctx.fillText(p.name, drawX + 15, drawY + 50); 
+                    ctx.textAlign = "left"; 
+                    // -----------------------------------------------------
 
-                    if (p.y > 400 || p.y < -30) p.alive = false;
+                    if (p.y > 400 || p.y < -30 || p.x < -30) killPlayer(p);
 
-                    let hitBox = 8; 
                     obstacles.forEach(obs => {
-                        if (obs.type !== 'hole' && obs.type !== 'ghost_box') {
+                        if (obs.type !== 'hole' && obs.type !== 'platform' && obs.type !== 'blocker') { 
                             if (p.x + hitBox < obs.x + obs.w && p.x + 30 - hitBox > obs.x && p.y + hitBox < obs.y + obs.h && p.y + 30 - hitBox > obs.y) {
-                                if (!p.invincible) p.alive = false; 
+                                if (!p.invincible) killPlayer(p); 
                             }
                         }
                     });
 
                     aliveCount++; lastAlive = p;
                 } else {
-                    ctx.globalAlpha = 0.5; 
-                    ctx.font = "30px Arial";
-                    ctx.fillText('👻', p.x, p.y + 30); 
-                    ctx.globalAlpha = 1.0;
+                    ctx.globalAlpha = 0.5; ctx.font = "30px Arial";
+                    ctx.fillText('👻', p.x, p.y + 30); ctx.globalAlpha = 1.0;
+                }
+            });
+
+            // Sistem Formasi
+            let sortedAlivePlayers = [...activePlayers].filter(p => p.alive).sort((a, b) => b.x - a.x);
+            
+            sortedAlivePlayers.forEach((p, index) => {
+                let targetX = (index === 0) ? 150 : sortedAlivePlayers[index - 1].x - 45;
+                
+                if (!p.isBlocked) {
+                    if (p.x < targetX) {
+                        p.x += 2; 
+                        if (p.x > targetX) p.x = targetX; 
+                    } else if (p.x > targetX) {
+                        p.x -= 1; 
+                        if (p.x < targetX) p.x = targetX;
+                    }
                 }
             });
 
