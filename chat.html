@@ -3,68 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pufutara WA Clone</title>
+    <title>Pufutara Chat - Monokrom</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Inter', sans-serif; }
-        body { background-color: #e5ddd5; display: flex; justify-content: center; align-items: center; height: 100vh; position: relative; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        /* Background body jadi abu-abu muda elegan */
+        body { background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; position: relative; }
         
-        /* Container Utama ala WA Web Mini */
-        .app-container { width: 100%; max-width: 400px; background: #ffffff; height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        /* Container Utama */
+        .app-container { width: 100%; max-width: 400px; background: #ffffff; height: 90vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; position: relative; }
         
-        /* Tema WA */
-        .wa-header { background: #00a884; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .wa-header h2 { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        /* Tema Pufutara Monokrom (Header Hitam) */
+        .wa-header { background: #111111; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .wa-header h2 { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
         .back-btn { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; display: none; margin-right: 5px; }
         
-        /* Halaman Auth - FIX TINGGI */
+        /* Halaman Auth */
         .auth-screen { padding: 40px 30px; display: flex; flex-direction: column; justify-content: center; flex: 1; text-align: center; }
         .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .btn-primary { background: #00a884; color: white; }
+        .input-field:focus { border-color: #111; outline: none; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
+        .btn-primary { background: #111111; color: white; }
+        .btn-primary:hover { background: #333333; }
         
-        /* Halaman Daftar Chat - FIX TINGGI */
+        /* Halaman Daftar Chat */
         .chat-list-screen { display: none; flex-direction: column; flex: 1; overflow-y: auto; background: white; }
-        .new-chat-box { padding: 15px; background: #f0f2f5; border-bottom: 1px solid #e9edef; display: flex; gap: 10px; }
+        .new-chat-box { padding: 15px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; gap: 10px; }
         .new-chat-box input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
-        .new-chat-box button { background: #00a884; color: white; border: none; padding: 0 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .new-chat-box input:focus { border-color: #111; }
+        .new-chat-box button { background: #111111; color: white; border: none; padding: 0 15px; border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .new-chat-box button:hover { background: #333; }
         
-        .chat-item { padding: 15px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #f2f2f2; transition: 0.2s; }
-        .chat-item:hover { background: #f5f6f6; }
+        .chat-item { padding: 15px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #f9f9f9; transition: 0.2s; }
+        .chat-item:hover { background: #f5f5f5; }
         .avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 1.2rem; }
         .chat-info { flex: 1; }
         .chat-name { font-weight: 600; font-size: 1rem; color: #111; }
-        .chat-preview { font-size: 0.85rem; color: #667781; margin-top: 3px; }
+        .chat-preview { font-size: 0.85rem; color: #888; margin-top: 3px; }
 
-        /* Halaman Ruang Chat - FIX KOTAK TENGGELAM */
-        .chat-room-screen { display: none; flex-direction: column; flex: 1; background: #efeae2; overflow: hidden; }
+        /* Halaman Ruang Chat */
+        .chat-room-screen { display: none; flex-direction: column; flex: 1; background: #f9f9f9; overflow: hidden; }
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         
-        /* Balon Chat WA */
-        .message { max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; cursor: pointer; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .msg-other { background: #ffffff; align-self: flex-start; border-top-left-radius: 0; }
-        .msg-me { background: #d9fdd3; align-self: flex-end; border-top-right-radius: 0; }
+        /* Balon Chat Monokrom */
+        .message { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; cursor: pointer; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        /* Pesan Teman (Abu-abu terang) */
+        .msg-other { background: #ffffff; border: 1px solid #eee; align-self: flex-start; border-top-left-radius: 2px; color: #111; }
+        /* Pesan Kita (Hitam elegan) */
+        .msg-me { background: #111111; align-self: flex-end; border-top-right-radius: 2px; color: #ffffff; }
         
-        .msg-sender { font-size: 0.75rem; font-weight: bold; margin-bottom: 3px; color: #00a884; }
-        .msg-text { word-wrap: break-word; color: #111; }
-        .msg-time { font-size: 0.65rem; color: #667781; align-self: flex-end; margin-top: 3px; }
+        .msg-sender { font-size: 0.75rem; font-weight: bold; margin-bottom: 4px; }
+        .msg-text { word-wrap: break-word; }
+        .msg-time { font-size: 0.65rem; align-self: flex-end; margin-top: 5px; }
+        .msg-other .msg-time { color: #aaa; }
+        .msg-me .msg-time { color: #888; }
         
-        .msg-quote { background: rgba(0,0,0,0.05); border-left: 4px solid #00a884; padding: 6px 10px; margin-bottom: 6px; border-radius: 4px; font-size: 0.8rem; color: #555; }
+        /* Kotak Kutipan / Reply */
+        .msg-quote { background: rgba(0,0,0,0.04); border-left: 3px solid #111; padding: 6px 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.8rem; color: #555; }
+        .msg-me .msg-quote { background: rgba(255,255,255,0.1); border-left: 3px solid #fff; color: #ddd; }
         
-        .chat-input-area { padding: 10px 15px; background: #f0f2f5; display: flex; gap: 10px; align-items: center; }
-        .chat-input-area input { flex: 1; padding: 12px 15px; border: none; border-radius: 20px; outline: none; font-size: 0.95rem; }
-        .btn-send { background: #00a884; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+        /* Area Input Ketik */
+        .chat-input-area { padding: 12px 15px; background: #ffffff; display: flex; gap: 10px; align-items: center; border-top: 1px solid #eee; }
+        .chat-input-area input { flex: 1; padding: 12px 15px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 0.95rem; background: #fafafa; }
+        .chat-input-area input:focus { border-color: #111; }
+        .btn-send { background: #111111; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+        .btn-send:hover { background: #333; transform: scale(1.05); }
 
-        .reply-banner { padding: 10px 15px; background: #f0f2f5; font-size: 0.8rem; display: none; justify-content: space-between; align-items: center; }
-        .reply-banner-content { flex: 1; border-left: 4px solid #00a884; padding-left: 8px; color: #555; }
-        .close-reply { cursor: pointer; font-weight: bold; font-size: 1.2rem; color: #888; margin-left: 10px; }
+        /* Banner Balasan (Reply) */
+        .reply-banner { padding: 10px 15px; background: #f5f5f5; font-size: 0.8rem; display: none; justify-content: space-between; align-items: center; border-top: 1px solid #eee; }
+        .reply-banner-content { flex: 1; border-left: 3px solid #111; padding-left: 10px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .close-reply { cursor: pointer; font-weight: bold; font-size: 1.1rem; color: #888; margin-left: 10px; }
+        .close-reply:hover { color: #111; }
 
-        .action-menu { position: absolute; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: none; flex-direction: column; overflow: hidden; z-index: 1000; min-width: 120px; }
-        .action-menu button { padding: 12px 15px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.9rem; }
-        .action-menu button:hover { background: #f0f0f0; }
-        .btn-menu-delete { color: #ff4d4d; border-top: 1px solid #eee; }
+        /* Menu Klik Pesan */
+        .action-menu { position: absolute; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; z-index: 1000; min-width: 120px; border: 1px solid #eee; }
+        .action-menu button { padding: 12px 15px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.9rem; color: #111; }
+        .action-menu button:hover { background: #f5f5f5; }
+        .btn-menu-delete { color: #ff4d4d !important; border-top: 1px solid #eee; }
 
-        .typing-indicator { font-size: 0.75rem; color: #00a884; font-style: italic; display: none; position: absolute; top: 60px; left: 0; width: 100%; background: rgba(255,255,255,0.9); padding: 5px 20px; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        /* Indikator Mengetik */
+        .typing-indicator { font-size: 0.75rem; color: #555; font-style: italic; display: none; position: absolute; top: 60px; left: 0; width: 100%; background: rgba(255,255,255,0.95); padding: 6px 20px; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -80,15 +98,15 @@
                 <button class="back-btn" id="backBtn" onclick="goBack()">❮</button>
                 <span id="headerTitle">Pufutara Chat</span>
             </h2>
-            <button style="background:none; border:none; color:white; font-size:0.8rem; cursor:pointer;" onclick="logout()" id="logoutBtn">Logout</button>
+            <button style="background:none; border:none; color:white; font-size:0.8rem; cursor:pointer; opacity: 0.8;" onclick="logout()" id="logoutBtn">Logout</button>
         </div>
 
         <div class="auth-screen" id="authScreen">
-            <h1 style="color: #00a884; margin-bottom: 20px;">Selamat Datang</h1>
+            <h1 style="color: #111; margin-bottom: 20px;">Selamat Datang</h1>
             <input type="email" id="emailInput" class="input-field" placeholder="Email kamu">
             <input type="password" id="passwordInput" class="input-field" placeholder="Password">
             <button class="btn btn-primary" onclick="login()">Login</button>
-            <button class="btn" style="background:#eee; color:#333;" onclick="register()">Daftar Akun Baru</button>
+            <button class="btn" style="background:#f5f5f5; color:#111; border: 1px solid #ddd;" onclick="register()">Daftar Akun Baru</button>
             <p id="authError" style="color: red; font-size: 0.8rem;"></p>
         </div>
 
@@ -133,7 +151,6 @@
         let currentUser = null;
         let myEmail = '';
         
-        // State Ruangan
         let currentMode = 'list'; 
         let targetEmail = ''; 
         let currentTable = 'global_chat';
@@ -142,8 +159,8 @@
         let isTyping = false, typingTimer;
         let selectedMsg = null, replyingTo = null; 
 
-        // Warna Acak
-        const colors = ['#e51c23','#e91e63','#9c27b0','#673ab7','#3f51b5','#00bcd4','#009688','#ff9800'];
+        // Warna Avatar diubah jadi nuansa Monokrom (Abu-abu gelap ke hitam)
+        const colors = ['#111111', '#222222', '#333333', '#444444', '#555555', '#1a1a1a', '#2b2b2b', '#3c3c3c'];
         function getColor(str) {
             let hash = 0; for(let i=0; i<str.length; i++) hash = str.charCodeAt(i) + ((hash<<5)-hash);
             return colors[Math.abs(hash)%colors.length];
@@ -152,7 +169,6 @@
         function escapeHTML(str) { return str.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t])); }
         function formatTime(d) { return new Date(d).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}); }
 
-        // --- AUTH ---
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) { 
@@ -175,7 +191,6 @@
         }
         async function logout() { await supabaseClient.auth.signOut(); location.reload(); }
 
-        // --- NAVIGASI UI ---
         function showAuthScreen() {
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('chatListScreen').style.display = 'none';
@@ -228,7 +243,6 @@
             }
         }
 
-        // --- FETCHING DATA ---
         async function loadPrivateContacts() {
             const { data } = await supabaseClient.from('private_chat')
                 .select('sender, receiver')
@@ -274,7 +288,6 @@
             }
         }
 
-        // --- SEND MESSAGE ---
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = escapeHTML(input.value.trim());
@@ -293,25 +306,20 @@
                 payload.receiver = targetEmail;
             }
 
-            // Minta data dikembalikan langsung untuk dirender
             const { data, error } = await supabaseClient.from(currentTable).insert([payload]).select();
             
             if (error) {
                 console.error("Gagal mengirim pesan:", error);
             } else if (data && data.length > 0) {
-                // Render pesan ke layar detik itu juga
                 renderMessage(data[0]);
             }
 
             stopTyping(); 
         }
 
-        // --- RENDER MESSAGE ---
         function renderMessage(msg) {
-            // Cegah pesan kembar di layar (jika trigger realtime masuk)
             if (document.getElementById(`msg-${msg.id}`)) return;
 
-            // Filter extra
             if(currentMode === 'private') {
                 if(!((msg.sender === myEmail && msg.receiver === targetEmail) || 
                      (msg.sender === targetEmail && msg.receiver === myEmail))) return;
@@ -358,7 +366,6 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // --- MENU & BALAS ---
         document.onclick = () => document.getElementById('actionMenu').style.display = 'none';
 
         function actionReply() {
@@ -379,7 +386,6 @@
 
         function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
 
-        // --- TYPING SENSOR ---
         function handleTyping() {
             if (!isTyping) {
                 isTyping = true;
@@ -396,7 +402,6 @@
             }
         }
 
-        // --- REALTIME UTAMA ---
         function setupRealtime() {
             if(chatChannel) supabaseClient.removeChannel(chatChannel);
             
