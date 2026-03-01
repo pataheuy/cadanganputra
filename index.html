@@ -14,7 +14,7 @@
         }
 
         html {
-            scroll-behavior: smooth; /* Biar scroll ke section proyek halus */
+            scroll-behavior: smooth;
         }
 
         body {
@@ -22,7 +22,6 @@
             color: #000000;
             line-height: 1.6;
             overflow-x: hidden;
-            /* DISESUAIKAN: height auto agar mentok di footer, bukan 400vh lagi */
             height: auto; 
         }
 
@@ -86,6 +85,24 @@
             z-index: 10;
             margin-top: 20px;
             animation: fadeInScale 1.2s ease-out forwards;
+            background-color: #fff;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 6;
         }
 
         .hero h1 {
@@ -103,7 +120,6 @@
             margin: 0 auto 45px;
         }
 
-        /* --- Tombol Hero --- */
         .btn {
             display: inline-block;
             background: #000;
@@ -112,11 +128,8 @@
             text-decoration: none;
             font-weight: 600;
             border-radius: 18px; 
-            position: relative;
-            overflow: hidden;
             transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            z-index: 1;
-            cursor: pointer; /* Biar enak diklik */
+            cursor: pointer;
         }
 
         .btn:hover {
@@ -124,7 +137,7 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.2);
         }
 
-        /* --- Project Grid & Cards --- */
+        /* --- Project Grid --- */
         .main-content {
             position: relative;
             z-index: 100;
@@ -140,7 +153,7 @@
         }
 
         .features {
-            padding: 20px 0;
+            padding: 20px 0 80px;
         }
 
         .grid {
@@ -264,7 +277,8 @@
     </header>
 
     <section class="hero" id="heroSec">
-        <div class="container">
+        <div class="hero-overlay" id="heroOverlay"></div>
+        <div class="container hero-content">
             <h1>Satu tempat, untuk semua.<br> Ini dia yang kalian cari.</h1>
             <p>Apa yang putra lakukan kalau megang pc? kalo ga deepseek ya pasti gemini. sampe muak yang lain ngeliat nya, tapi yang namanya minat. sedikit demi sedikit lama lama jadi bukit. dan inilah hasilnya.</p>
             <a id="scrollBtn" class="btn">Mau liat? Scroll dong!</a>
@@ -373,6 +387,35 @@
                             </div>
                         </a>
 
+                        <a href="news.html" class="card-link">
+                            <div class="card">
+                                <span class="tag">13 / News Update</span>
+                                <h3>PufutaraNews</h3>
+                                <p>Kalkulator sains simpel dan akurat buat bantu ngerjain tugas Labkom atau Matematika tanpa ribet.</p>
+                            </div>
+                        </a>
+                        <a href="audio.html" class="card-link">
+                            <div class="card">
+                                <span class="tag">14 / Audio Flow</span>
+                                <h3>PufutaraAudioLibrary</h3>
+                                <p>Dengerin lo-fi beat dan ambience suara alam biar kodingnya makin fokus, chill, dan gak spaneng.</p>
+                            </div>
+                        </a>
+                        <a href="library.html" class="card-link">
+                            <div class="card">
+                                <span class="tag">15 / DigLib Tech</span>
+                                <h3>PufutaraDigitalLibrary</h3>
+                                <p>Cek kondisi cuaca terkini di Jalancagak biar tau harus bawa payung atau enggak pas mau ke Labkom.</p>
+                            </div>
+                        </a>
+                        <a href="gallery.html" class="card-link">
+                            <div class="card">
+                                <span class="tag">16 / Global Storage!</span>
+                                <h3>PufutaraVault</h3>
+                                <p>Pertamakalinya PUTRA BELAJAR FULL STACK DEVOLOPER!. upload foto auto ke save ke server dan bisa diakses semua orang!</p>
+                            </div>
+                        </a>
+
                     </div>
                 </div>
             </section>
@@ -418,26 +461,24 @@
     <script>
         const zoomElement = document.getElementById('zoomElement');
         const heroSec = document.getElementById('heroSec');
+        const heroOverlay = document.getElementById('heroOverlay');
         const cardLinks = document.querySelectorAll('.card-link');
         const scrollBtn = document.getElementById('scrollBtn');
         const navProyek = document.getElementById('navProyek');
 
-        // FUNGSI UNTUK SCROLL DENGAN OFFSET (Naikin dikit)
         function smoothScrollWithOffset(targetId, offset) {
             const targetElement = document.getElementById(targetId);
             const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
             window.scrollTo({
-                top: targetPosition - offset, // Offset ini yang bikin posisi "naik dikit"
+                top: targetPosition - offset,
                 behavior: 'smooth'
             });
         }
 
-        // Event listener buat tombol hero
         scrollBtn.addEventListener('click', () => {
-            smoothScrollWithOffset('proyek-section', 80); // 80px adalah jarak naiknya
+            smoothScrollWithOffset('proyek-section', 80);
         });
 
-        // Event listener buat link navbar
         navProyek.addEventListener('click', (e) => {
             e.preventDefault();
             smoothScrollWithOffset('proyek-section', 80);
@@ -447,15 +488,17 @@
             const scrollPos = window.scrollY;
             const windowHeight = window.innerHeight;
             
-            // Animasi Hero & Zoom
-            let progress = scrollPos / (windowHeight * 0.85);
+            let progress = scrollPos / (windowHeight * 0.6);
             if (progress > 1) progress = 1;
 
+            // Efek Memutih
+            heroOverlay.style.opacity = progress;
+
+            // Animasi Hero & Zoom
             const scaleValue = 1.1 - (0.1 * progress);
             zoomElement.style.transform = `scale(${scaleValue})`;
 
-            heroSec.style.opacity = 1 - (progress * 1.4);
-            heroSec.style.transform = `translateY(${-scrollPos * 0.25}px)`;
+            heroSec.style.transform = `translateY(${-scrollPos * 0.3}px)`;
 
             // Reveal Animasi Card
             cardLinks.forEach((card, index) => {
@@ -463,7 +506,7 @@
                 if (cardTop < windowHeight - 50) {
                     setTimeout(() => {
                         card.classList.add('show');
-                    }, index % 4 * 100); 
+                    }, (index % 4) * 100); 
                 }
             });
         });
@@ -472,7 +515,3 @@
     </script>
 </body>
 </html>
-
-
-
-
