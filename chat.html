@@ -7,18 +7,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
-        /* Background body jadi abu-abu muda elegan */
         body { background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; position: relative; }
         
-        /* Container Utama */
         .app-container { width: 100%; max-width: 400px; background: #ffffff; height: 90vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; position: relative; }
         
-        /* Tema Pufutara Monokrom (Header Hitam) */
         .wa-header { background: #111111; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .wa-header h2 { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
         .back-btn { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; display: none; margin-right: 5px; }
         
-        /* Halaman Auth */
         .auth-screen { padding: 40px 30px; display: flex; flex-direction: column; justify-content: center; flex: 1; text-align: center; }
         .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
         .input-field:focus { border-color: #111; outline: none; }
@@ -26,7 +22,6 @@
         .btn-primary { background: #111111; color: white; }
         .btn-primary:hover { background: #333333; }
         
-        /* Halaman Daftar Chat */
         .chat-list-screen { display: none; flex-direction: column; flex: 1; overflow-y: auto; background: white; }
         .new-chat-box { padding: 15px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; gap: 10px; }
         .new-chat-box input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
@@ -41,48 +36,38 @@
         .chat-name { font-weight: 600; font-size: 1rem; color: #111; }
         .chat-preview { font-size: 0.85rem; color: #888; margin-top: 3px; }
 
-        /* Halaman Ruang Chat */
         .chat-room-screen { display: none; flex-direction: column; flex: 1; background: #f9f9f9; overflow: hidden; }
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         
-        /* Balon Chat Monokrom */
         .message { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; cursor: pointer; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        /* Pesan Teman (Abu-abu terang) */
         .msg-other { background: #ffffff; border: 1px solid #eee; align-self: flex-start; border-top-left-radius: 2px; color: #111; }
-        /* Pesan Kita (Hitam elegan) */
         .msg-me { background: #111111; align-self: flex-end; border-top-right-radius: 2px; color: #ffffff; }
         
-        /* Nama Pengirim tetap mencolok */
         .msg-sender { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; }
         .msg-text { word-wrap: break-word; }
         .msg-time { font-size: 0.65rem; align-self: flex-end; margin-top: 5px; }
         .msg-other .msg-time { color: #aaa; }
         .msg-me .msg-time { color: #888; }
         
-        /* Kotak Kutipan / Reply */
         .msg-quote { background: rgba(0,0,0,0.04); border-left: 3px solid #111; padding: 6px 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.8rem; color: #555; }
         .msg-me .msg-quote { background: rgba(255,255,255,0.1); border-left: 3px solid #fff; color: #ddd; }
         
-        /* Area Input Ketik */
         .chat-input-area { padding: 12px 15px; background: #ffffff; display: flex; gap: 10px; align-items: center; border-top: 1px solid #eee; }
         .chat-input-area input { flex: 1; padding: 12px 15px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 0.95rem; background: #fafafa; }
         .chat-input-area input:focus { border-color: #111; }
         .btn-send { background: #111111; color: white; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .btn-send:hover { background: #333; transform: scale(1.05); }
 
-        /* Banner Balasan (Reply) */
         .reply-banner { padding: 10px 15px; background: #f5f5f5; font-size: 0.8rem; display: none; justify-content: space-between; align-items: center; border-top: 1px solid #eee; }
         .reply-banner-content { flex: 1; border-left: 3px solid #111; padding-left: 10px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .close-reply { cursor: pointer; font-weight: bold; font-size: 1.1rem; color: #888; margin-left: 10px; }
         .close-reply:hover { color: #111; }
 
-        /* Menu Klik Pesan */
         .action-menu { position: absolute; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; z-index: 1000; min-width: 120px; border: 1px solid #eee; }
         .action-menu button { padding: 12px 15px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.9rem; color: #111; }
         .action-menu button:hover { background: #f5f5f5; }
         .btn-menu-delete { color: #ff4d4d !important; border-top: 1px solid #eee; }
 
-        /* Indikator Mengetik */
         .typing-indicator { font-size: 0.75rem; color: #555; font-style: italic; display: none; position: absolute; top: 60px; left: 0; width: 100%; background: rgba(255,255,255,0.95); padding: 6px 20px; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border-bottom: 1px solid #eee; }
     </style>
 </head>
@@ -160,7 +145,6 @@
         let isTyping = false, typingTimer;
         let selectedMsg = null, replyingTo = null; 
 
-        // Warna Avatar dan Nama diubah jadi TERANG MENColok agar kelihatan di background putih
         const colors = [
             '#FF3B30', '#34C759', '#007AFF', '#FF9500', 
             '#AF52DE', '#FF2D55', '#5856D6', '#00C7BE', 
@@ -179,7 +163,6 @@
             if (session) { 
                 currentUser = session.user; 
                 myEmail = currentUser.email;
-                // FIX: Langsung masuk ke Grup Global saat login berhasil
                 openRoom('global'); 
                 setupRealtime();
             } else { showAuthScreen(); }
@@ -197,6 +180,7 @@
         }
         async function logout() { await supabaseClient.auth.signOut(); location.reload(); }
 
+        // MENGATUR TAMPILAN LAYAR (Udah diperbaiki biar gak numpuk)
         function showAuthScreen() {
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('chatListScreen').style.display = 'none';
@@ -224,8 +208,11 @@
             targetEmail = email;
             currentTable = (mode === 'global') ? 'global_chat' : 'private_chat';
 
+            // FIX: Menyembunyikan layar login dan chat list secara paksa
+            document.getElementById('authScreen').style.display = 'none';
             document.getElementById('chatListScreen').style.display = 'none';
             document.getElementById('chatRoomScreen').style.display = 'flex';
+            
             document.getElementById('backBtn').style.display = 'block';
             document.getElementById('logoutBtn').style.display = 'none';
 
