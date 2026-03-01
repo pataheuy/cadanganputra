@@ -3,64 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pufutara Chat - Pro Edition</title>
+    <title>Pufutara Chat</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
         body { background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; position: relative; }
         
-        .app-container { width: 100%; max-width: 600px; background: #ffffff; height: 95vh; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        /* CONTAINER DISESUAIKAN (Lebar +20%, Tinggi +15%) */
+        .app-container { 
+            width: 100%; 
+            max-width: 720px; /* Naik dari 600px */
+            background: #ffffff; 
+            height: 75vh;     /* Naik dari 65vh */
+            border-radius: 12px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1); 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            position: relative; 
+        }
 
-        @media (max-width: 600px) { .app-container { max-width: 100%; height: 100vh; border-radius: 0; } }
+        /* Batas responsif HP disesuaikan ke 720px */
+        @media (max-width: 720px) { 
+            .app-container { max-width: 100%; height: 100vh; border-radius: 0; } 
+        }
         
-        .wa-header { background: #111111; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .wa-header h2 { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-        .back-btn { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; display: none; }
-        
-        /* Status Online */
+        /* Header & Status */
+        .wa-header { background: #111111; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .wa-header h2 { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .back-btn { background: none; border: none; color: white; font-size: 1.1rem; cursor: pointer; display: none; }
         .status-dot { width: 10px; height: 10px; background: #bbb; border-radius: 50%; display: inline-block; border: 2px solid #fff; }
         .status-online { background: #34C759 !important; box-shadow: 0 0 5px #34C759; }
 
-        .auth-screen { padding: 40px 30px; display: flex; flex-direction: column; justify-content: center; flex: 1; text-align: center; }
-        .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .btn-primary { background: #111111; color: white; }
+        /* Auth Screen */
+        .auth-screen { padding: 30px; display: flex; flex-direction: column; justify-content: center; flex: 1; text-align: center; }
+        .input-field { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; }
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; }
+        .btn-primary { background: #111111; color: white; margin-bottom: 10px; }
         
+        /* Chat List */
         .chat-list-screen { display: none; flex-direction: column; flex: 1; overflow-y: auto; background: white; }
-        .new-chat-box { padding: 15px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; gap: 10px; }
-        .new-chat-box input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
-        
-        .chat-item { padding: 15px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #f9f9f9; position: relative; }
+        .new-chat-box { padding: 12px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; gap: 8px; }
+        .new-chat-box input { flex: 1; padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 0.9rem; }
+        .chat-item { padding: 12px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #f9f9f9; }
         .chat-item:hover { background: #f5f5f5; }
-        .avatar-container { position: relative; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 1.2rem; }
-        .chat-info { flex: 1; }
-        .chat-name { font-weight: 600; font-size: 1rem; color: #111; }
-        .chat-preview { font-size: 0.85rem; color: #888; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 1rem; position: relative; }
 
+        /* Chat Room */
         .chat-room-screen { display: none; flex-direction: column; flex: 1; background: #f9f9f9; overflow: hidden; }
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        
-        .message { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .msg-other { background: #ffffff; align-self: flex-start; border-top-left-radius: 2px; color: #111; border: 1px solid #eee; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .message { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; display: flex; flex-direction: column; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; }
+        .msg-other { background: #ffffff; align-self: flex-start; border-top-left-radius: 2px; border: 1px solid #eee; }
         .msg-me { background: #111111; align-self: flex-end; border-top-right-radius: 2px; color: #ffffff; }
         
-        .msg-sender { font-size: 0.8rem; font-weight: bold; margin-bottom: 4px; }
-        .msg-footer { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 5px; }
-        .msg-time { font-size: 0.65rem; opacity: 0.6; }
-        
-        /* Centang Biru */
-        .check-mark { font-size: 0.75rem; font-weight: bold; color: #888; }
-        .is-read { color: #3498db !important; } /* Warna biru cerah */
+        /* Reply & Footer */
+        .msg-quote { background: rgba(0,0,0,0.05); border-left: 3px solid #111; padding: 5px 8px; margin-bottom: 6px; border-radius: 4px; font-size: 0.75rem; color: #555; }
+        .msg-me .msg-quote { background: rgba(255,255,255,0.1); border-left: 3px solid #fff; color: #ddd; }
+        .reply-banner { padding: 8px 15px; background: #f5f5f5; font-size: 0.75rem; display: none; justify-content: space-between; align-items: center; border-top: 1px solid #eee; }
+        .msg-footer { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 4px; }
+        .msg-time { font-size: 0.6rem; opacity: 0.6; }
+        .check-mark { font-size: 0.7rem; color: #888; }
+        .is-read { color: #3498db !important; }
 
-        .chat-input-area { padding: 12px 15px; background: #ffffff; display: flex; gap: 10px; align-items: center; border-top: 1px solid #eee; }
-        .chat-input-area input { flex: 1; padding: 12px 18px; border: 1px solid #ddd; border-radius: 25px; outline: none; background: #fafafa; }
-        .btn-send { background: #111111; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        /* Input Area */
+        .chat-input-area { padding: 10px 15px; background: #ffffff; display: flex; gap: 10px; align-items: center; border-top: 1px solid #eee; }
+        .chat-input-area input { flex: 1; padding: 10px 15px; border: 1px solid #ddd; border-radius: 20px; outline: none; background: #fafafa; font-size: 0.9rem; }
+        .btn-send { background: #111111; color: white; border: none; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; }
 
-        .typing-indicator { font-size: 0.75rem; color: #555; font-style: italic; display: none; position: absolute; top: 60px; left: 0; width: 100%; background: rgba(255,255,255,0.95); padding: 8px 20px; z-index: 5; border-bottom: 1px solid #eee; }
+        .action-menu { position: absolute; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; z-index: 1000; min-width: 110px; border: 1px solid #eee; }
+        .action-menu button { padding: 10px 15px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.85rem; }
+        .typing-indicator { font-size: 0.7rem; color: #555; font-style: italic; display: none; position: absolute; top: 55px; left: 0; width: 100%; background: rgba(255,255,255,0.95); padding: 5px 20px; z-index: 5; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
+
+    <div id="actionMenu" class="action-menu">
+        <button onclick="actionReply()">Balas ↩️</button>
+        <button id="btnMenuDelete" style="color: #ff4d4d;" onclick="actionDelete()">Hapus 🗑️</button>
+    </div>
 
     <div class="app-container">
         <div class="wa-header">
@@ -69,29 +89,26 @@
                 <span id="headerTitle">Pufutara Chat</span>
                 <span id="headerStatus" class="status-dot"></span>
             </h2>
-            <button style="background:none; border:none; color:white; font-size:0.8rem; cursor:pointer;" onclick="logout()" id="logoutBtn">Logout</button>
+            <button style="background:none; border:none; color:white; font-size:0.75rem; cursor:pointer;" onclick="logout()" id="logoutBtn">Logout</button>
         </div>
 
         <div class="auth-screen" id="authScreen">
-            <h1 style="margin-bottom: 20px;">Selamat Datang</h1>
-            <input type="email" id="emailInput" class="input-field" placeholder="Email kamu">
+            <h2 style="margin-bottom: 15px; font-size: 1.2rem;">Pufutara Login</h2>
+            <input type="email" id="emailInput" class="input-field" placeholder="Email">
             <input type="password" id="passwordInput" class="input-field" placeholder="Password">
             <button class="btn btn-primary" onclick="login()">Login</button>
-            <button class="btn" style="background:#f5f5f5; border: 1px solid #ddd;" onclick="register()">Daftar</button>
-            <p id="authError" style="color: red; font-size: 0.8rem;"></p>
+            <button class="btn" style="background:#f5f5f5; border: 1px solid #ddd; font-size: 0.8rem;" onclick="register()">Daftar Akun Baru</button>
+            <p id="authError" style="color: red; font-size: 0.75rem; margin-top: 5px;"></p>
         </div>
 
         <div class="chat-list-screen" id="chatListScreen">
             <div class="new-chat-box">
                 <input type="email" id="newPrivateEmail" placeholder="Email teman...">
-                <button onclick="startPrivateChatFromInput()" style="background:#111; color:white; border:none; border-radius:20px; padding:0 15px; cursor:pointer;">Chat</button>
+                <button onclick="startPrivateChatFromInput()" style="background:#111; color:white; border:none; border-radius:20px; padding:0 12px; cursor:pointer; font-size:0.8rem;">Chat</button>
             </div>
             <div class="chat-item" onclick="openRoom('global')">
                 <div class="avatar" style="background: #111;">🌍</div>
-                <div class="chat-info">
-                    <div class="chat-name">Grup Global Pufutara</div>
-                    <div class="chat-preview">Ngobrol bareng semua orang</div>
-                </div>
+                <div class="chat-info"><div class="chat-name">Grup Global</div><div class="chat-preview">Publik</div></div>
             </div>
             <div id="privateChatList"></div>
         </div>
@@ -99,8 +116,14 @@
         <div class="chat-room-screen" id="chatRoomScreen">
             <div id="typingIndicator" class="typing-indicator">...</div>
             <div class="chat-messages" id="chatMessages"></div>
+            
+            <div id="replyBanner" class="reply-banner">
+                <div class="reply-banner-content" id="replyText"></div>
+                <div onclick="cancelReply()" style="cursor:pointer; font-weight:bold; padding: 0 5px;">✕</div>
+            </div>
+
             <div class="chat-input-area">
-                <input type="text" id="messageInput" placeholder="Ketik pesan..." onkeypress="handleEnter(event)" oninput="handleTyping()" autocomplete="off">
+                <input type="text" id="messageInput" placeholder="Tulis pesan..." onkeypress="handleEnter(event)" oninput="handleTyping()" autocomplete="off">
                 <button class="btn-send" onclick="sendMessage()">➤</button>
             </div>
         </div>
@@ -112,9 +135,9 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
         let currentUser = null, myEmail = '', currentMode = 'list', targetEmail = '', currentTable = 'global_chat';
-        let chatChannel = null, onlineUsers = {};
+        let chatChannel = null, onlineUsers = {}, selectedMsg = null, replyingTo = null;
 
-        const colors = ['#FF3B30', '#34C759', '#007AFF', '#FF9500', '#AF52DE', '#FF2D55', '#5856D6', '#00C7BE', '#E51C23', '#3F51B5', '#E91E63', '#009688'];
+        const colors = ['#FF3B30', '#34C759', '#007AFF', '#FF9500', '#AF52DE', '#FF2D55', '#5856D6', '#00C7BE'];
         function getColor(str) {
             let hash = 0; for(let i=0; i<str.length; i++) hash = str.charCodeAt(i) + ((hash<<5)-hash);
             return colors[Math.abs(hash)%colors.length];
@@ -122,10 +145,8 @@
 
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) { 
-                currentUser = session.user; myEmail = currentUser.email;
-                openRoom('global'); setupRealtime();
-            } else { showAuthScreen(); }
+            if (session) { currentUser = session.user; myEmail = currentUser.email; openRoom('global'); setupRealtime(); } 
+            else { showAuthScreen(); }
         }
 
         async function login() {
@@ -144,7 +165,6 @@
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('chatListScreen').style.display = 'none';
             document.getElementById('chatRoomScreen').style.display = 'none';
-            document.getElementById('logoutBtn').style.display = 'none';
         }
 
         async function showChatList() {
@@ -152,27 +172,21 @@
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('chatRoomScreen').style.display = 'none';
             document.getElementById('chatListScreen').style.display = 'flex';
-            document.getElementById('headerTitle').innerText = 'Daftar Obrolan';
+            document.getElementById('headerTitle').innerText = 'Daftar Chat';
             document.getElementById('backBtn').style.display = 'none';
-            document.getElementById('logoutBtn').style.display = 'block';
-            document.getElementById('headerStatus').className = 'status-dot';
+            document.getElementById('headerStatus').style.display = 'none';
             await loadPrivateContacts();
         }
 
         async function openRoom(mode, email = '') {
             currentMode = mode; targetEmail = email;
             currentTable = (mode === 'global') ? 'global_chat' : 'private_chat';
-            
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('chatListScreen').style.display = 'none';
             document.getElementById('chatRoomScreen').style.display = 'flex';
             document.getElementById('backBtn').style.display = 'inline-block';
-            document.getElementById('logoutBtn').style.display = 'none';
-            document.getElementById('headerTitle').innerText = mode === 'global' ? '🌍 Grup Global' : `👤 ${email.split('@')[0]}`;
-            
-            // Cek status online di header
+            document.getElementById('headerTitle').innerText = mode === 'global' ? '🌍 Grup Global' : `${email.split('@')[0]}`;
             updateHeaderStatus(email);
-            
             document.getElementById('chatMessages').innerHTML = '';
             await loadMessages();
             if(mode === 'private') markMessagesAsRead(email);
@@ -191,81 +205,79 @@
             const { data } = await q; if (data) data.forEach(msg => renderMessage(msg));
         }
 
-        // FUNGSI CENTANG BIRU: Update database kalau pesan sudah dilihat
         async function markMessagesAsRead(senderEmail) {
-            await supabaseClient.from('private_chat')
-                .update({ is_read: true })
-                .eq('sender', senderEmail)
-                .eq('receiver', myEmail)
-                .eq('is_read', false);
+            await supabaseClient.from('private_chat').update({ is_read: true }).eq('sender', senderEmail).eq('receiver', myEmail).eq('is_read', false);
         }
 
         async function sendMessage() {
             const input = document.getElementById('messageInput'), text = input.value.trim();
             if (!text) return; input.value = ''; 
-            const payload = { sender: myEmail, message: text, is_read: false };
+            let finalMsg = replyingTo ? `|RPLY|${replyingTo.senderName}|${replyingTo.text}|${text}` : text;
+            const payload = { sender: myEmail, message: finalMsg, is_read: false };
             if(currentMode === 'private') payload.receiver = targetEmail;
-            
             const { data } = await supabaseClient.from(currentTable).insert([payload]).select();
-            if (data) renderMessage(data[0]);
+            if (data) renderMessage(data[0]); cancelReply();
         }
 
         function renderMessage(msg) {
             if (document.getElementById(`msg-${msg.id}`)) {
-                // Jika pesan sudah ada tapi status read berubah, update centangnya saja
                 if(msg.is_read) document.getElementById(`check-${msg.id}`)?.classList.add('is-read');
                 return;
             }
             const chatBox = document.getElementById('chatMessages'), isMe = msg.sender === myEmail, senderName = msg.sender.split('@')[0];
             const div = document.createElement('div'); div.id = `msg-${msg.id}`; div.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
             
-            let sHtml = (!isMe && currentMode === 'global') ? `<div class="msg-sender" style="color: ${getColor(msg.sender)};">${senderName}</div>` : '';
-            
-            // Logika Centang (Hanya untuk pesan saya di Private Chat)
-            let checkHtml = (isMe && currentMode === 'private') ? `<span id="check-${msg.id}" class="check-mark ${msg.is_read ? 'is-read' : ''}">✓✓</span>` : '';
+            let displayMsg = msg.message, quoteHtml = '', pureText = displayMsg;
+            if (displayMsg.startsWith('|RPLY|')) {
+                const p = displayMsg.split('|');
+                if (p.length >= 5) { pureText = p.slice(4).join('|'); displayMsg = pureText; quoteHtml = `<div class="msg-quote"><strong>${p[2]}</strong><br>${p[3]}</div>`; }
+            }
 
+            let sHtml = (!isMe && currentMode === 'global') ? `<div class="msg-sender" style="color: ${getColor(msg.sender)}; font-size:0.75rem;">${senderName}</div>` : '';
+            let checkHtml = (isMe && currentMode === 'private') ? `<span id="check-${msg.id}" class="check-mark ${msg.is_read ? 'is-read' : ''}">✓✓</span>` : '';
             const timeStr = new Date(msg.created_at).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
 
-            div.innerHTML = `${sHtml}<div class="msg-text">${msg.message}</div>
-                             <div class="msg-footer">
-                                <span class="msg-time">${timeStr}</span>
-                                ${checkHtml}
-                             </div>`;
+            div.innerHTML = `${sHtml}${quoteHtml}<div class="msg-text">${displayMsg}</div>
+                             <div class="msg-footer"><span class="msg-time">${timeStr}</span>${checkHtml}</div>`;
+            
+            div.onclick = (e) => {
+                e.stopPropagation(); selectedMsg = { id: msg.id, senderName, text: pureText, isMe, table: currentTable };
+                const menu = document.getElementById('actionMenu'); menu.style.display = 'flex';
+                menu.style.left = Math.min(e.pageX, window.innerWidth - 120) + 'px'; menu.style.top = Math.min(e.pageY, window.innerHeight - 100) + 'px';
+                document.getElementById('btnMenuDelete').style.display = isMe ? 'block' : 'none';
+            };
+
             chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight;
         }
 
+        document.onclick = () => document.getElementById('actionMenu').style.display = 'none';
+        function actionReply() {
+            if (!selectedMsg) return; replyingTo = selectedMsg;
+            document.getElementById('replyBanner').style.display = 'flex';
+            document.getElementById('replyText').innerHTML = `Balas ${replyingTo.senderName}: ${replyingTo.text}`;
+            document.getElementById('messageInput').focus();
+        }
+        function cancelReply() { replyingTo = null; document.getElementById('replyBanner').style.display = 'none'; }
+        async function actionDelete() { if(selectedMsg?.isMe && confirm("Hapus pesan?")) await supabaseClient.from(selectedMsg.table).delete().eq('id', selectedMsg.id); }
+
         function setupRealtime() {
             if(chatChannel) supabaseClient.removeChannel(chatChannel);
-            
-            chatChannel = supabaseClient.channel('pufutara_pro', { config: { presence: { key: myEmail } } });
-
-            chatChannel
-                .on('presence', { event: 'sync' }, () => {
-                    const state = chatChannel.presenceState();
-                    onlineUsers = {};
-                    for (const key in state) { onlineUsers[key] = true; }
-                    if(currentMode === 'private') updateHeaderStatus(targetEmail);
-                    refreshChatListPresence();
-                })
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'global_chat' }, p => handleRealtime(p, 'global_chat'))
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'private_chat' }, p => handleRealtime(p, 'private_chat'))
-                .subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        await chatChannel.track({ online_at: new Date().toISOString() });
-                    }
-                });
+            chatChannel = supabaseClient.channel('pufutara_custom', { config: { presence: { key: myEmail } } });
+            chatChannel.on('presence', { event: 'sync' }, () => {
+                const state = chatChannel.presenceState(); onlineUsers = {};
+                for (const key in state) onlineUsers[key] = true;
+                if(currentMode === 'private') updateHeaderStatus(targetEmail);
+                if(currentMode === 'list') loadPrivateContacts();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'global_chat' }, p => handleRealtime(p, 'global_chat'))
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'private_chat' }, p => handleRealtime(p, 'private_chat'))
+            .subscribe(async (s) => { if (s === 'SUBSCRIBED') await chatChannel.track({ online_at: new Date().toISOString() }); });
         }
 
         function handleRealtime(p, table) {
-            if(p.eventType === 'INSERT' && currentTable === table) {
-                renderMessage(p.new);
-                if(currentMode === 'private' && p.new.sender === targetEmail) markMessagesAsRead(targetEmail);
-            } 
-            else if (p.eventType === 'UPDATE' && currentTable === table) {
-                // Update Centang Biru secara realtime
-                const check = document.getElementById(`check-${p.new.id}`);
-                if(check && p.new.is_read) check.classList.add('is-read');
-            }
+            if(p.eventType === 'INSERT' && currentTable === table) { renderMessage(p.new); if(currentMode === 'private' && p.new.sender === targetEmail) markMessagesAsRead(targetEmail); } 
+            else if (p.eventType === 'UPDATE' && currentTable === table) { const ck = document.getElementById(`check-${p.new.id}`); if(ck && p.new.is_read) ck.classList.add('is-read'); }
+            else if (p.eventType === 'DELETE' && currentTable === table) { document.getElementById(`msg-${p.old.id}`)?.remove(); }
         }
 
         async function loadPrivateContacts() {
@@ -276,23 +288,13 @@
                 const listDiv = document.getElementById('privateChatList'); listDiv.innerHTML = '';
                 contacts.forEach(contact => {
                     const isOnline = onlineUsers[contact];
-                    const div = document.createElement('div'); div.className = 'chat-item'; div.id = `item-${contact}`;
+                    const div = document.createElement('div'); div.className = 'chat-item';
                     div.onclick = () => openRoom('private', contact);
-                    div.innerHTML = `<div class="avatar-container">
-                                        <div class="avatar" style="background: ${getColor(contact)};">${contact.charAt(0).toUpperCase()}</div>
-                                        <span class="status-dot ${isOnline ? 'status-online' : ''}" style="position:absolute; bottom:0; right:0;"></span>
-                                     </div>
-                                     <div class="chat-info">
-                                        <div class="chat-name">${contact.split('@')[0]}</div>
-                                        <div class="chat-preview">${isOnline ? 'Sedang online' : 'Offline'}</div>
-                                     </div>`;
+                    div.innerHTML = `<div class="avatar" style="background:${getColor(contact)}">${contact.charAt(0).toUpperCase()}<span class="status-dot ${isOnline ? 'status-online' : ''}" style="position:absolute; bottom:0; right:0; border:1px solid white;"></span></div>
+                                     <div class="chat-info"><div class="chat-name">${contact.split('@')[0]}</div><div class="chat-preview">${isOnline?'Online':'Offline'}</div></div>`;
                     listDiv.appendChild(div);
                 });
             }
-        }
-
-        function refreshChatListPresence() {
-            if(currentMode === 'list') loadPrivateContacts();
         }
 
         function goBack() { showChatList(); }
@@ -301,6 +303,7 @@
             const email = document.getElementById('newPrivateEmail').value.trim().toLowerCase();
             if(email && email !== myEmail) openRoom('private', email);
         }
+        function handleTyping() {}
 
         checkSession();
     </script>
