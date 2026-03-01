@@ -24,15 +24,22 @@
         .btn-logout { background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; }
         
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #fafafa; }
-        .message { max-width: 80%; padding: 10px 15px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; }
+        .message { max-width: 80%; padding: 10px 15px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; position: relative; }
         .msg-other { background: #e9ecef; align-self: flex-start; border-bottom-left-radius: 2px; }
         .msg-me { background: #111; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         
         .msg-sender { font-size: 0.75rem; font-weight: bold; margin-bottom: 3px; }
         .msg-text { word-wrap: break-word; }
-        .msg-time { font-size: 0.65rem; margin-top: 5px; align-self: flex-end; }
+        
+        /* Area bawah pesan (Waktu & Tombol Hapus) */
+        .msg-footer { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 5px; }
+        .msg-time { font-size: 0.65rem; }
         .msg-other .msg-time { color: #888; }
         .msg-me .msg-time { color: #ccc; }
+        
+        /* Tombol Hapus */
+        .btn-delete { background: none; border: none; color: #ff4d4d; cursor: pointer; font-size: 0.8rem; opacity: 0.8; transition: 0.2s; padding: 0; }
+        .btn-delete:hover { opacity: 1; transform: scale(1.1); }
 
         .chat-input-area { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; }
         .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
@@ -69,34 +76,28 @@
     </div>
 
     <script>
-        // URL & Key Supabase
         const SUPABASE_URL = 'https://puywjdopumlzvmzbcudr.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eXdqZG9wdW1senZtemJjdWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDE3MTksImV4cCI6MjA4NzkxNzcxOX0.vvThyjtK2SlA9oA9Mr_XOmt1R_tNZk-ib3PO9XpiiSc'; 
         
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentUser = null;
 
-        // Palet warna estetik untuk nama user
         const userColors = ['#e51c23', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#5677fc', '#03a9f4', '#00bcd4', '#009688', '#259b24', '#8bc34a', '#afb42b', '#ff9800', '#ff5722', '#795548', '#607d8b'];
 
-        // Fungsi ajaib pengubah nama jadi warna (Pasti selalu sama untuk nama yang sama)
         function getColorForUser(username) {
             let hash = 0;
             for (let i = 0; i < username.length; i++) {
                 hash = username.charCodeAt(i) + ((hash << 5) - hash);
             }
-            const index = Math.abs(hash) % userColors.length;
-            return userColors[index];
+            return userColors[Math.abs(hash) % userColors.length];
         }
 
-        // Fungsi pengubah format waktu ke Jam:Menit (contoh 14:05)
         function formatTime(dateString) {
             if (!dateString) return '';
             const date = new Date(dateString);
             return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         }
 
-        // --- AUTHENTICATION ---
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
@@ -111,22 +112,16 @@
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
             const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) {
-                document.getElementById('authError').innerText = error.message;
-            } else {
-                checkSession();
-            }
+            if (error) document.getElementById('authError').innerText = error.message;
+            else checkSession();
         }
 
         async function login() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                document.getElementById('authError').innerText = "Email atau Password salah!";
-            } else {
-                checkSession();
-            }
+            if (error) document.getElementById('authError').innerText = "Email atau Password salah!";
+            else checkSession();
         }
 
         async function logout() {
@@ -135,7 +130,6 @@
             showAuthScreen();
         }
 
-        // --- TAMPILAN ---
         function showAuthScreen() {
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('chatScreen').style.display = 'none';
@@ -150,13 +144,8 @@
             subscribeToMessages();
         }
 
-        // --- CHAT LOGIC ---
         async function loadMessages() {
-            const { data, error } = await supabaseClient
-                .from('global_chat')
-                .select('*')
-                .order('created_at', { ascending: true });
-            
+            const { data, error } = await supabaseClient.from('global_chat').select('*').order('created_at', { ascending: true });
             if (!error && data) {
                 const chatBox = document.getElementById('chatMessages');
                 chatBox.innerHTML = '';
@@ -169,11 +158,17 @@
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (!text) return;
-            
             const username = currentUser.email.split('@')[0];
-            input.value = ''; // Kosongkan input
-            
+            input.value = ''; 
             await supabaseClient.from('global_chat').insert([{ sender: username, message: text }]);
+        }
+
+        // FUNGSI BARU: Hapus Pesan dari Database
+        async function deleteMessage(messageId) {
+            // Konfirmasi sebelum hapus biar nggak salah pencet
+            if(confirm("Yakin mau hapus pesan ini?")) {
+                await supabaseClient.from('global_chat').delete().eq('id', messageId);
+            }
         }
 
         function renderMessage(msg) {
@@ -182,23 +177,31 @@
             const isMe = msg.sender === username;
 
             const div = document.createElement('div');
+            // Tambahkan ID ke elemen div agar mudah dicari saat dihapus
+            div.id = `msg-${msg.id}`; 
             div.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
             
-            // Format jam, kalau datanya baru masuk dan belum ada created_at, pakai waktu saat ini
             const timeText = formatTime(msg.created_at || new Date().toISOString());
 
             let senderHtml = '';
             if (!isMe) {
-                // Berikan warna unik sesuai nama pengirim
                 const userColor = getColorForUser(msg.sender);
                 senderHtml = `<div class="msg-sender" style="color: ${userColor};">${msg.sender}</div>`;
             }
 
-            // Gabungkan Nama (berwarna), Teks Pesan, dan Jam
+            // Siapkan tombol hapus (Hanya untuk pesan sendiri)
+            let deleteBtnHtml = '';
+            if (isMe && msg.id) {
+                deleteBtnHtml = `<button class="btn-delete" onclick="deleteMessage('${msg.id}')" title="Hapus Pesan">🗑️</button>`;
+            }
+
             div.innerHTML = `
                 ${senderHtml}
                 <div class="msg-text">${msg.message}</div>
-                <div class="msg-time">${timeText}</div>
+                <div class="msg-footer">
+                    <span class="msg-time">${timeText}</span>
+                    ${deleteBtnHtml}
+                </div>
             `;
             
             chatBox.appendChild(div);
@@ -214,12 +217,19 @@
             if (e.key === 'Enter') sendMessage();
         }
 
-        // --- REAL-TIME LISTENER ---
         function subscribeToMessages() {
             supabaseClient
                 .channel('public:global_chat')
+                // Listener untuk pesan baru
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, payload => {
                     renderMessage(payload.new);
+                })
+                // Listener BARU untuk pesan yang dihapus
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'global_chat' }, payload => {
+                    const msgDiv = document.getElementById(`msg-${payload.old.id}`);
+                    if (msgDiv) {
+                        msgDiv.remove(); // Hilangkan dari layar
+                    }
                 })
                 .subscribe();
         }
