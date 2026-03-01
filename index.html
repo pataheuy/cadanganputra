@@ -52,7 +52,7 @@
 
         .logo {
             font-weight: 800;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             letter-spacing: -1px;
             text-transform: uppercase;
         }
@@ -77,10 +77,10 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 55vh;
+            height: 85vh;
             display: flex;
             align-items: center;
-            /* justify-content: center; */
+            justify-content: center;
             text-align: center;
             z-index: 10;
             margin-top: 20px;
@@ -106,7 +106,7 @@
         }
 
         .hero h1 {
-            font-size: 4rem;
+            font-size: 4.5rem;
             font-weight: 900;
             line-height: 1.05;
             margin-bottom: 25px;
@@ -114,28 +114,10 @@
         }
 
         .hero p {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             color: #666;
             max-width: 700px;
             margin: 0 auto 45px;
-        }
-
-        /* --- New Floating Image Style --- */
-        .floating-img {
-            position: absolute;
-            bottom: -10px; /* Posisi di bawah teks */
-            left: 50%;
-            transform: translateX(50vw); /* Mulai dari jauh di kanan luar layar */
-            width: 300px;
-            height: auto;
-            border-radius: 20px;
-            /* box-shadow: 0 20px 40px rgba(0,0,0,0.1); */
-            transition: transform 1.5s cubic-bezier(0.19, 1, 0.22, 1);
-            z-index: 7;
-        }
-
-        .floating-img.active {
-            transform: translateX(170%); /* Geser ke tengah */
         }
 
         .btn {
@@ -159,12 +141,12 @@
         .main-content {
             position: relative;
             z-index: 100;
-            margin-top: 60vh;
+            margin-top: 80vh;
         }
 
         .zoom-wrapper {
             transform-origin: center top;
-            transition: transform 0.9s ease-out;
+            transition: transform 0.1s ease-out;
             background: #ffffff;
             border-top: 1px solid #f0f0f0;
             box-shadow: 0 -25px 60px rgba(0,0,0,0.04);
@@ -203,32 +185,8 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
-            min-height: 320px;
+            min-height: 200px; /* Ukuran lebih kecil karena tanpa gambar */
             height: 100%;
-        }
-
-        .card-image {
-            width: 100%;
-            height: 160px;
-            background-color: #f9f9f9;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #f0f0f0;
-        }
-
-        .card-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-
-        .card-link:hover .card-image img {
-            transform: scale(1.1);
         }
 
         .card-link:hover .card {
@@ -249,6 +207,7 @@
             font-weight: 600;
         }
 
+        /* Footer */
         footer {
             padding: 100px 0 40px;
             background: #fff;
@@ -279,6 +238,7 @@
             font-size: 0.85rem;
         }
 
+        /* Responsive */
         @media (max-width: 1024px) { 
             .grid { grid-template-columns: repeat(3, 1fr); }
             .hero h1 { font-size: 4rem; }
@@ -288,7 +248,6 @@
             .grid { grid-template-columns: repeat(2, 1fr); }
             .hero { height: 80vh; }
             .main-content { margin-top: 80vh; }
-            .floating-img { width: 200px; bottom: -100px; }
         }
 
         @keyframes slideDown {
@@ -323,8 +282,6 @@
             <h1>Satu tempat, untuk semua.<br> Ini dia yang kalian cari.</h1>
             <p>Apa yang putra lakukan kalau megang pc? kalo ga deepseek ya pasti gemini. sampe muak yang lain ngeliat nya, tapi yang namanya minat. sedikit demi sedikit lama lama jadi bukit. dan inilah hasilnya.</p>
             <a id="scrollBtn" class="btn">Mau liat? Scroll dong!</a>
-            
-            <img src="foto/archive.jfif" alt="Featured" class="floating-img" id="appearingImg">
         </div>
     </section>
 
@@ -336,7 +293,6 @@
                         
                         <a href="OS.html" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/os.jfif" alt="PufutaraOS" loading="lazy"></div>
                                 <span class="tag">01 / Operating System</span>
                                 <h3>PufutaraOS</h3>
                                 <p>Sistem operasi modern dan serba guna berbasis web. cita cita putra waktu kecil akhirnya terwujud!</p>
@@ -345,7 +301,6 @@
 
                         <a href="workspace.html" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/work.jpg" alt="PufutaraWorkspace" loading="lazy"></div>
                                 <span class="tag">02 / Productivity Hub</span>
                                 <h3>PufutaraWorkspace</h3>
                                 <p>Pusat Productivity App dari pufutara, gabungan dari beberapa projek yang menjadi satu kesatuan!</p>
@@ -354,7 +309,6 @@
 
                         <a href="doc.html" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/todo.jfif" alt="PufutaraWriter" loading="lazy"></div>
                                 <span class="tag">03 / Writing & Document</span>
                                 <h3>PufutaraWriter</h3>
                                 <p>Pengolahan kata yang cepat, simpel dan modern! mudah diakses di mana saja dan pastinya, ringan!</p>
@@ -363,7 +317,6 @@
 
                         <a href="Paint.html" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/paint.jfif" alt="PufutaraProPaint" loading="lazy"></div>
                                 <span class="tag">04 / Draw & Paint</span>
                                 <h3>PufutaraProPaint</h3>
                                 <p>menggambar dan mengsketsa apapun dengan mudah. aplikasi Pemula, tools Profesional</p>
@@ -372,7 +325,6 @@
 
                         <a href="spin wheel.html" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/spinw.jfif" alt="PufutaraSpinWheel" loading="lazy"></div>
                                 <span class="tag">05 / Education</span>
                                 <h3>PufutaraSpinWheel</h3>
                                 <p>Putuskan sesuatu dengan cepat dan tak terduga! biasa nya di pake pak ulil buat bikin kelompok b indo sih.</p>
@@ -381,7 +333,6 @@
 
                         <a href="https://pufuta.vercel.app" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/web.jfif" alt="PufutaraWeb" loading="lazy"></div>
                                 <span class="tag">06 / Website</span>
                                 <h3>PufutaraWeb</h3>
                                 <p>Ya ini ma gausah ada deskripsi semua orang juga dah pd tw. btw pw nya putraganteng y.</p>
@@ -390,7 +341,6 @@
 
                         <a href="chat.html" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/chat.jfif" alt="PufutaraChat" loading="lazy"></div>
                                 <span class="tag">07 / Relax</span>
                                 <h3>PufutaraChat</h3>
                                 <p>Obrolan Simple, tambah akun, login, langsung chat ke semua orang!.</p>
@@ -399,7 +349,6 @@
 
                         <a href="todo.html" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/todo.jfif" alt="PufutaraToDo" loading="lazy"></div>
                                 <span class="tag">08 / Focus List</span>
                                 <h3>PufutaraToDo</h3>
                                 <p>Todo list fokus yang simpel dan modern, mudah di pakai dan mudah di laksanakan, cocok buat putra yg pelupa.</p>
@@ -408,7 +357,6 @@
 
                         <a href="habit tracker.html" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/habit.jpg" alt="PufutaraHabitTracker" loading="lazy"></div>
                                 <span class="tag">09 / Habits</span>
                                 <h3>PufutaraHabitTracker</h3>
                                 <p>Monitoring proses membangun kebiasaan baik dan menghilangkan kebiasaan yang buruk.</p>
@@ -417,7 +365,6 @@
 
                         <a href="https://kanay.vercel.app" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/webold.jfif" alt="PufutaraWebOld" loading="lazy"></div>
                                 <span class="tag">10 / BEM Nostalgia</span>
                                 <h3>PufutaraWeb Old</h3>
                                 <p>Huhhuhu, udahlah gausah ada deskrip, tanya aja ke anak BEM se sikma apa nih web.</p>
@@ -426,7 +373,6 @@
 
                         <a href="index.html" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/archive.jfif" alt="PufutaraArchive" loading="lazy"></div>
                                 <span class="tag">11 / The Center</span>
                                 <h3>PufutaraArchive</h3>
                                 <p>Yang anda lihat ini, yaitulah pufutara archive, sebagai platform pusat arsip proyek proyek nya putra..</p>
@@ -435,7 +381,6 @@
 
                         <a href="game.html" class="card-link" target="_blank">
                             <div class="card">
-                                <div class="card-image"><img src="foto/game.jfif" alt="PufutaraMiniGames" loading="lazy"></div>
                                 <span class="tag">12 / You Know lah</span>
                                 <h3>PufutaraMiniGames</h3>
                                 <p>Yagitulah, belom jadi si tapi lagi dibuat, kasih ide game dong but pufutara minigames!.</p>
@@ -444,16 +389,14 @@
 
                         <a href="news.html" class="card-link">
                             <div class="card">
-                                <div class="card-image"><img src="foto/archive.jfif" alt="PufutaraNews" loading="lazy"></div>
                                 <span class="tag">13 / News Update</span>
                                 <h3>PufutaraNews</h3>
-                                <p>Portal berita genre random kesukaan putra, topik bebas terserah putra, yahaha.</p>
+                                <p>Kalkulator sains simpel dan akurat buat bantu ngerjain tugas Labkom atau Matematika tanpa ribet.</p>
                             </div>
                         </a>
 
                         <a href="audio.html" class="card-link">
                             <div class="card">
-                                <div class="card-image"><img src="foto/musicc.png" alt="PufutaraAudioLibrary" loading="lazy"></div>
                                 <span class="tag">14 / Audio Flow</span>
                                 <h3>PufutaraAudioLibrary</h3>
                                 <p>Dengerin lo-fi beat dan ambience suara alam biar kodingnya makin fokus, chill, dan gak spaneng.</p>
@@ -462,16 +405,14 @@
 
                         <a href="library.html" class="card-link">
                             <div class="card">
-                                <div class="card-image"><img src="foto/perpus.jfif" alt="PufutaraDigLib" loading="lazy"></div>
                                 <span class="tag">15 / DigLib Tech</span>
-                                <h3>PufutaraLibrary</h3>
-                                <p>Kayak pusat baca buku digital, perpustakaan digital yg sekrang baru display doaang.</p>
+                                <h3>PufutaraDigLib</h3>
+                                <p>Cek kondisi cuaca terkini di Jalancagak biar tau harus bawa payung atau enggak pas mau ke Labkom.</p>
                             </div>
                         </a>
 
                         <a href="gallery.html" class="card-link">
                             <div class="card">
-                                <div class="card-image"><img src="foto/foto.jfif" alt="PufutaraGallery" loading="lazy"></div>
                                 <span class="tag">16 / Global Storage!</span>
                                 <h3>PufutaraGallery</h3>
                                 <p>Pertamakalinya PUTRA BELAJAR FULL STACK DEVOLOPER!. upload foto auto ke save ke server dan bisa diakses semua orang!</p>
@@ -527,14 +468,6 @@
         const cardLinks = document.querySelectorAll('.card-link');
         const scrollBtn = document.getElementById('scrollBtn');
         const navProyek = document.getElementById('navProyek');
-        const appearingImg = document.getElementById('appearingImg');
-
-        // Logic Munculkan Gambar Setelah 2 Detik
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                appearingImg.classList.add('active');
-            }, 2000);
-        });
 
         function smoothScrollWithOffset(targetId, offset) {
             const targetElement = document.getElementById(targetId);
@@ -561,16 +494,13 @@
             let progress = scrollPos / (windowHeight * 0.6);
             if (progress > 1) progress = 1;
 
-            // Efek Memutih
             heroOverlay.style.opacity = progress;
 
-            // Animasi Hero & Zoom
             const scaleValue = 1.1 - (0.1 * progress);
             zoomElement.style.transform = `scale(${scaleValue})`;
 
             heroSec.style.transform = `translateY(${-scrollPos * 0.3}px)`;
 
-            // Reveal Animasi Card
             cardLinks.forEach((card, index) => {
                 const cardTop = card.getBoundingClientRect().top;
                 if (cardTop < windowHeight - 50) {
