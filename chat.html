@@ -63,12 +63,14 @@
     <script>
         const SUPABASE_URL = 'https://puywjdopumlzvmzbcudr.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eXdqZG9wdW1senZtemJjdWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDE3MTksImV4cCI6MjA4NzkxNzcxOX0.vvThyjtK2SlA9oA9Mr_XOmt1R_tNZk-ib3PO9XpiiSc'; 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // NAMA VARIABEL DIGANTI JADI supabaseClient AGAR TIDAK BENTROK
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
 
         async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 currentUser = session.user;
                 showChatScreen();
@@ -80,7 +82,7 @@
         async function register() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
-            const { data, error } = await supabase.auth.signUp({ email, password });
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
             if (error) {
                 document.getElementById('authError').innerText = error.message;
             } else {
@@ -91,7 +93,7 @@
         async function login() {
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             if (error) {
                 document.getElementById('authError').innerText = "Email atau Password salah!";
             } else {
@@ -100,7 +102,7 @@
         }
 
         async function logout() {
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
             currentUser = null;
             showAuthScreen();
         }
@@ -120,7 +122,7 @@
         }
 
         async function loadMessages() {
-            const { data, error } = await supabase.from('global_chat').select('*').order('created_at', { ascending: true });
+            const { data, error } = await supabaseClient.from('global_chat').select('*').order('created_at', { ascending: true });
             if (!error && data) {
                 const chatBox = document.getElementById('chatMessages');
                 chatBox.innerHTML = '';
@@ -135,7 +137,7 @@
             if (!text) return;
             const username = currentUser.email.split('@')[0];
             input.value = '';
-            await supabase.from('global_chat').insert([{ sender: username, message: text }]);
+            await supabaseClient.from('global_chat').insert([{ sender: username, message: text }]);
         }
 
         function renderMessage(msg) {
@@ -160,7 +162,7 @@
         }
 
         function subscribeToMessages() {
-            supabase.channel('public:global_chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, payload => {
+            supabaseClient.channel('public:global_chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, payload => {
                 renderMessage(payload.new);
             }).subscribe();
         }
