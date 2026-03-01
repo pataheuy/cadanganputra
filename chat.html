@@ -129,13 +129,12 @@
         const SUPABASE_URL = 'https://puywjdopumlzvmzbcudr.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eXdqZG9wdW1senZtemJjdWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDE3MTksImV4cCI6MjA4NzkxNzcxOX0.vvThyjtK2SlA9oA9Mr_XOmt1R_tNZk-ib3PO9XpiiSc'; 
         
-        // --- INI YANG DIPERBAIKI (Ganti nama variabel jadi supabaseClient) ---
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentUser = null;
         let myEmail = '';
         
         // State Ruangan
-        let currentMode = 'list'; // list, global, private
+        let currentMode = 'list'; 
         let targetEmail = ''; 
         let currentTable = 'global_chat';
 
@@ -194,7 +193,6 @@
             document.getElementById('backBtn').style.display = 'none';
             document.getElementById('logoutBtn').style.display = 'block';
             
-            // Render Daftar Private Chat
             await loadPrivateContacts();
         }
 
@@ -232,13 +230,11 @@
 
         // --- FETCHING DATA ---
         async function loadPrivateContacts() {
-            // Ambil semua pesan private dimana kita terlibat
             const { data } = await supabaseClient.from('private_chat')
                 .select('sender, receiver')
                 .or(`sender.eq.${myEmail},receiver.eq.${myEmail}`);
             
             if(data) {
-                // Cari email lawan bicara yang unik
                 const contacts = new Set();
                 data.forEach(msg => {
                     if(msg.sender !== myEmail) contacts.add(msg.sender);
@@ -268,7 +264,6 @@
             let query = supabaseClient.from(currentTable).select('*').order('created_at', { ascending: true });
             
             if(currentMode === 'private') {
-                // Filter hanya pesan antara aku dan dia
                 query = query.or(`and(sender.eq.${myEmail},receiver.eq.${targetEmail}),and(sender.eq.${targetEmail},receiver.eq.${myEmail})`);
             }
 
@@ -279,6 +274,7 @@
             }
         }
 
+        // --- UPDATE TERBARU: SEND MESSAGE ---
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = escapeHTML(input.value.trim());
@@ -297,12 +293,25 @@
                 payload.receiver = targetEmail;
             }
 
-            await supabaseClient.from(currentTable).insert([payload]);
+            // Minta data dikembalikan langsung untuk dirender
+            const { data, error } = await supabaseClient.from(currentTable).insert([payload]).select();
+            
+            if (error) {
+                console.error("Gagal mengirim pesan:", error);
+            } else if (data && data.length > 0) {
+                // Render pesan ke layar detik itu juga
+                renderMessage(data[0]);
+            }
+
             stopTyping(); 
         }
 
+        // --- UPDATE TERBARU: RENDER MESSAGE ---
         function renderMessage(msg) {
-            // Filter extra: Jangan tampilkan pesan private orang lain jika bocor
+            // Cegah pesan kembar di layar (jika trigger realtime masuk)
+            if (document.getElementById(`msg-${msg.id}`)) return;
+
+            // Filter extra
             if(currentMode === 'private') {
                 if(!((msg.sender === myEmail && msg.receiver === targetEmail) || 
                      (msg.sender === targetEmail && msg.receiver === myEmail))) return;
@@ -393,19 +402,14 @@
             
             chatChannel = supabaseClient.channel('pufutara_wa', { config: { broadcast: { self: false } } });
             
-            // Dengerin Global
             chatChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'global_chat' }, payload => handleRealtime(payload, 'global_chat'));
-            
-            // Dengerin Private
             chatChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'private_chat' }, payload => handleRealtime(payload, 'private_chat'));
             
-            // Dengerin Ngetik
             chatChannel.on('broadcast', { event: 'typing' }, payload => {
                 const data = payload.payload;
                 if(data.email === myEmail) return;
                 
                 const ind = document.getElementById('typingIndicator');
-                // Cek apakah sinyal ngetik ini buat ruangan yang lagi kita buka
                 let show = false;
                 if(currentMode === 'global' && data.room === 'global') show = true;
                 if(currentMode === 'private' && data.room === myEmail && data.email === targetEmail) show = true;
@@ -426,7 +430,6 @@
                 const msgDiv = document.getElementById(`msg-${payload.old.id}`); 
                 if (msgDiv) msgDiv.remove();
             } else if (payload.eventType === 'INSERT' && currentMode === 'list' && table === 'private_chat') {
-                // Kalau lagi di menu awal ada chat masuk, refresh list
                 loadPrivateContacts();
             }
         }
