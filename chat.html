@@ -3,124 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pufutara WA Clone</title>
+    <title>Pufutara Global Chat</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Inter', sans-serif; }
-        body { background-color: #e5ddd5; display: flex; justify-content: center; align-items: center; height: 100vh; position: relative; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; height: 100vh; position: relative; }
+        .app-container { width: 100%; max-width: 400px; background: white; height: 90vh; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; position: relative; }
         
-        /* Container Utama ala WA Web Mini */
-        .app-container { width: 100%; max-width: 400px; background: #ffffff; height: 90vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        
-        /* Tema WA */
-        .wa-header { background: #00a884; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .wa-header h2 { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-        .back-btn { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; display: none; margin-right: 5px; }
-        
-        /* Halaman Auth */
         .auth-screen { padding: 40px 30px; display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center; }
-        .input-field { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        .btn-primary { background: #00a884; color: white; }
+        .auth-screen h1 { margin-bottom: 10px; font-size: 1.8rem; }
+        .auth-screen p { color: #666; margin-bottom: 30px; font-size: 0.9rem; }
+        .input-field { width: 100%; padding: 12px 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
+        .btn-primary { background: #111; color: white; }
+        .btn-primary:hover { background: #333; }
+        .btn-secondary { background: #eee; color: #111; }
+        .btn-secondary:hover { background: #ddd; }
         
-        /* Halaman Daftar Chat */
-        .chat-list-screen { display: none; flex-direction: column; height: 100%; overflow-y: auto; background: white; }
-        .new-chat-box { padding: 15px; background: #f0f2f5; border-bottom: 1px solid #e9edef; display: flex; gap: 10px; }
-        .new-chat-box input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
-        .new-chat-box button { background: #00a884; color: white; border: none; padding: 0 15px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .chat-screen { display: none; flex-direction: column; height: 100%; position: relative; }
+        .chat-header { background: #111; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .btn-logout { background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; }
         
-        .chat-item { padding: 15px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #f2f2f2; transition: 0.2s; }
-        .chat-item:hover { background: #f5f6f6; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 1.2rem; }
-        .chat-info { flex: 1; }
-        .chat-name { font-weight: 600; font-size: 1rem; color: #111; }
-        .chat-preview { font-size: 0.85rem; color: #667781; margin-top: 3px; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #fafafa; }
+        
+        /* Modifikasi Pesan biar bisa di-klik */
+        .message { max-width: 80%; padding: 10px 15px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; }
+        .message:active { transform: scale(0.98); opacity: 0.9; }
+        .msg-other { background: #e9ecef; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .msg-me { background: #111; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        
+        .msg-sender { font-size: 0.75rem; font-weight: bold; margin-bottom: 3px; }
+        .msg-text { word-wrap: break-word; }
+        
+        /* Desain Kotak Balasan (Reply Quote) */
+        .msg-quote { background: rgba(0,0,0,0.05); border-left: 3px solid #111; padding: 6px 10px; margin-bottom: 6px; border-radius: 4px; font-size: 0.8rem; color: #555; }
+        .msg-me .msg-quote { background: rgba(255,255,255,0.15); border-left-color: white; color: #ddd; }
+        
+        .msg-footer { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 5px; }
+        .msg-time { font-size: 0.65rem; }
+        .msg-other .msg-time { color: #888; }
+        .msg-me .msg-time { color: #ccc; }
 
-        /* Halaman Ruang Chat */
-        .chat-room-screen { display: none; flex-direction: column; height: 100%; background: #efeae2; }
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        /* Area Mengetik & Indikator */
+        .typing-indicator { font-size: 0.75rem; color: #888; font-style: italic; padding: 5px 15px; display: none; background: white; border-top: 1px solid #eee; }
         
-        /* Balon Chat WA */
-        .message { max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 0.95rem; line-height: 1.4; display: flex; flex-direction: column; cursor: pointer; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        .msg-other { background: #ffffff; align-self: flex-start; border-top-left-radius: 0; }
-        .msg-me { background: #d9fdd3; align-self: flex-end; border-top-right-radius: 0; }
-        
-        .msg-sender { font-size: 0.75rem; font-weight: bold; margin-bottom: 3px; color: #00a884; }
-        .msg-text { word-wrap: break-word; color: #111; }
-        .msg-time { font-size: 0.65rem; color: #667781; align-self: flex-end; margin-top: 3px; }
-        
-        .msg-quote { background: rgba(0,0,0,0.05); border-left: 4px solid #00a884; padding: 6px 10px; margin-bottom: 6px; border-radius: 4px; font-size: 0.8rem; color: #555; }
-        
-        .chat-input-area { padding: 10px 15px; background: #f0f2f5; display: flex; gap: 10px; align-items: center; }
-        .chat-input-area input { flex: 1; padding: 12px 15px; border: none; border-radius: 20px; outline: none; font-size: 0.95rem; }
-        .btn-send { background: #00a884; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; justify-content: center; align-items: center; }
+        /* Banner saat membalas pesan */
+        .reply-banner { padding: 10px 15px; background: #e9ecef; font-size: 0.8rem; display: none; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; }
+        .reply-banner-content { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #555; border-left: 3px solid #111; padding-left: 8px; }
+        .close-reply { cursor: pointer; font-weight: bold; padding-left: 10px; font-size: 1.1rem; color: #888; }
+        .close-reply:hover { color: #111; }
 
-        .reply-banner { padding: 10px 15px; background: #f0f2f5; font-size: 0.8rem; display: none; justify-content: space-between; align-items: center; }
-        .reply-banner-content { flex: 1; border-left: 4px solid #00a884; padding-left: 8px; color: #555; }
-        .close-reply { cursor: pointer; font-weight: bold; font-size: 1.2rem; color: #888; margin-left: 10px; }
+        .chat-input-area { padding: 15px; background: white; display: flex; gap: 10px; border-top: 1px solid #eee; }
+        .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
+        .btn-send { background: #111; color: white; border: none; padding: 0 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
 
+        /* Menu Klik Kiri (Context Menu) */
         .action-menu { position: absolute; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: none; flex-direction: column; overflow: hidden; z-index: 1000; min-width: 120px; }
-        .action-menu button { padding: 12px 15px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.9rem; }
+        .action-menu button { padding: 12px 15px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.9rem; font-family: 'Inter', sans-serif; font-weight: 500; }
         .action-menu button:hover { background: #f0f0f0; }
-        .btn-menu-delete { color: #ff4d4d; border-top: 1px solid #eee; }
-
-        .typing-indicator { font-size: 0.75rem; color: #00a884; font-style: italic; display: none; position: absolute; top: 60px; left: 0; width: 100%; background: rgba(255,255,255,0.9); padding: 5px 20px; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn-menu-delete { color: #ff4d4d; border-top: 1px solid #eee !important; }
     </style>
 </head>
 <body>
 
     <div id="actionMenu" class="action-menu">
-        <button onclick="actionReply()">Balas ↩️</button>
+        <button onclick="actionReply()">Membalas ↩️</button>
         <button id="btnMenuDelete" class="btn-menu-delete" onclick="actionDelete()">Hapus 🗑️</button>
     </div>
 
     <div class="app-container">
-        <div class="wa-header" id="mainHeader">
-            <h2>
-                <button class="back-btn" id="backBtn" onclick="goBack()">❮</button>
-                <span id="headerTitle">Pufutara Chat</span>
-            </h2>
-            <button style="background:none; border:none; color:white; font-size:0.8rem; cursor:pointer;" onclick="logout()" id="logoutBtn">Logout</button>
-        </div>
-
         <div class="auth-screen" id="authScreen">
-            <h1 style="color: #00a884; margin-bottom: 20px;">Selamat Datang</h1>
-            <input type="email" id="emailInput" class="input-field" placeholder="Email kamu">
-            <input type="password" id="passwordInput" class="input-field" placeholder="Password">
+            <h1>Pufutara Chat 💬</h1>
+            <p>Login atau daftar untuk mulai ngobrol global!</p>
+            <input type="email" id="emailInput" class="input-field" placeholder="Email (misal: aku@pufutara.com)">
+            <input type="password" id="passwordInput" class="input-field" placeholder="Password (min. 6 karakter)">
             <button class="btn btn-primary" onclick="login()">Login</button>
-            <button class="btn" style="background:#eee; color:#333;" onclick="register()">Daftar Akun Baru</button>
-            <p id="authError" style="color: red; font-size: 0.8rem;"></p>
+            <button class="btn btn-secondary" onclick="register()">Daftar Akun Baru</button>
+            <p id="authError" style="color: red; font-size: 0.8rem; margin-top: 10px;"></p>
         </div>
 
-        <div class="chat-list-screen" id="chatListScreen">
-            <div class="new-chat-box">
-                <input type="email" id="newPrivateEmail" placeholder="Ketik email teman untuk Japri...">
-                <button onclick="startPrivateChatFromInput()">Chat</button>
+        <div class="chat-screen" id="chatScreen">
+            <div class="chat-header">
+                <div>
+                    <strong>Pufutara Global</strong>
+                    <div style="font-size: 0.7rem; color: #aaa;" id="userDisplay"></div>
+                </div>
+                <button class="btn-logout" onclick="logout()">Logout</button>
             </div>
             
-            <div class="chat-item" onclick="openRoom('global')">
-                <div class="avatar" style="background: #111;">🌍</div>
-                <div class="chat-info">
-                    <div class="chat-name">Grup Global Pufutara</div>
-                    <div class="chat-preview">Ngobrol bareng semua orang</div>
-                </div>
-            </div>
-
-            <div id="privateChatList"></div>
-        </div>
-
-        <div class="chat-room-screen" id="chatRoomScreen">
-            <div id="typingIndicator" class="typing-indicator">...</div>
             <div class="chat-messages" id="chatMessages"></div>
+            <div id="typingIndicator" class="typing-indicator">Seseorang sedang mengetik...</div>
             
             <div id="replyBanner" class="reply-banner">
-                <div class="reply-banner-content" id="replyText"></div>
+                <div class="reply-banner-content" id="replyText">Membalas pesan...</div>
                 <div class="close-reply" onclick="cancelReply()">✕</div>
             </div>
 
             <div class="chat-input-area">
                 <input type="text" id="messageInput" placeholder="Ketik pesan..." onkeypress="handleEnter(event)" oninput="handleTyping()" autocomplete="off">
-                <button class="btn-send" onclick="sendMessage()">➤</button>
+                <button class="btn-send" onclick="sendMessage()">Kirim</button>
             </div>
         </div>
     </div>
@@ -129,305 +110,223 @@
         const SUPABASE_URL = 'https://puywjdopumlzvmzbcudr.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eXdqZG9wdW1senZtemJjdWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDE3MTksImV4cCI6MjA4NzkxNzcxOX0.vvThyjtK2SlA9oA9Mr_XOmt1R_tNZk-ib3PO9XpiiSc'; 
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let currentUser = null;
-        let myEmail = '';
-        
-        // State Ruangan
-        let currentMode = 'list'; // list, global, private
-        let targetEmail = ''; 
-        let currentTable = 'global_chat';
-
         let chatChannel = null; 
-        let isTyping = false, typingTimer;
-        let selectedMsg = null, replyingTo = null; 
+        let isTyping = false;
+        let typingTimer;
+        let typingUsers = new Set();
 
-        // Warna Acak
-        const colors = ['#e51c23','#e91e63','#9c27b0','#673ab7','#3f51b5','#00bcd4','#009688','#ff9800'];
-        function getColor(str) {
-            let hash = 0; for(let i=0; i<str.length; i++) hash = str.charCodeAt(i) + ((hash<<5)-hash);
-            return colors[Math.abs(hash)%colors.length];
+        // Variabel untuk fitur Menu dan Membalas
+        let selectedMsg = null; 
+        let replyingTo = null; 
+
+        const userColors = ['#e51c23', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#5677fc', '#03a9f4', '#00bcd4', '#009688', '#259b24', '#8bc34a', '#afb42b', '#ff9800', '#ff5722', '#795548', '#607d8b'];
+
+        function getColorForUser(username) {
+            let hash = 0;
+            for (let i = 0; i < username.length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
+            return userColors[Math.abs(hash) % userColors.length];
         }
 
-        function escapeHTML(str) { return str.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t])); }
-        function formatTime(d) { return new Date(d).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}); }
+        function formatTime(dateString) {
+            if (!dateString) return '';
+            return new Date(dateString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        }
 
-        // --- AUTH ---
+        // Fungsi anti-hack/XSS (mengamankan teks)
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
+        }
+
         async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) { 
-                currentUser = session.user; 
-                myEmail = currentUser.email;
-                showChatList(); 
-                setupRealtime();
-            } else { showAuthScreen(); }
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) { currentUser = session.user; showChatScreen(); } 
+            else { showAuthScreen(); }
+        }
+
+        async function register() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const { error } = await supabaseClient.auth.signUp({ email, password });
+            if (error) document.getElementById('authError').innerText = error.message; else checkSession();
         }
 
         async function login() {
-            const email = document.getElementById('emailInput').value, password = document.getElementById('passwordInput').value;
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) document.getElementById('authError').innerText = error.message; else checkSession();
-        }
-        async function register() {
-            const email = document.getElementById('emailInput').value, password = document.getElementById('passwordInput').value;
-            const { error } = await supabase.auth.signUp({ email, password });
-            if (error) document.getElementById('authError').innerText = error.message; else checkSession();
-        }
-        async function logout() { await supabase.auth.signOut(); location.reload(); }
-
-        // --- NAVIGASI UI ---
-        function showAuthScreen() {
-            document.getElementById('authScreen').style.display = 'flex';
-            document.getElementById('chatListScreen').style.display = 'none';
-            document.getElementById('chatRoomScreen').style.display = 'none';
-            document.getElementById('headerTitle').innerText = 'Pufutara Chat';
-            document.getElementById('logoutBtn').style.display = 'none';
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) document.getElementById('authError').innerText = "Email atau Password salah!"; else checkSession();
         }
 
-        async function showChatList() {
-            currentMode = 'list';
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('chatRoomScreen').style.display = 'none';
-            document.getElementById('chatListScreen').style.display = 'flex';
-            document.getElementById('headerTitle').innerText = 'Daftar Obrolan';
-            document.getElementById('backBtn').style.display = 'none';
-            document.getElementById('logoutBtn').style.display = 'block';
-            
-            // Render Daftar Private Chat
-            await loadPrivateContacts();
-        }
+        async function logout() { await supabaseClient.auth.signOut(); currentUser = null; showAuthScreen(); }
 
-        function goBack() { showChatList(); }
-
-        async function openRoom(mode, email = '') {
-            currentMode = mode;
-            targetEmail = email;
-            currentTable = (mode === 'global') ? 'global_chat' : 'private_chat';
-
-            document.getElementById('chatListScreen').style.display = 'none';
-            document.getElementById('chatRoomScreen').style.display = 'flex';
-            document.getElementById('backBtn').style.display = 'block';
-            document.getElementById('logoutBtn').style.display = 'none';
-
-            if(mode === 'global') {
-                document.getElementById('headerTitle').innerText = '🌍 Grup Global';
-            } else {
-                document.getElementById('headerTitle').innerText = `👤 ${email.split('@')[0]}`;
-            }
-
-            document.getElementById('chatMessages').innerHTML = '';
-            await loadMessages();
-        }
-
-        function startPrivateChatFromInput() {
-            const email = document.getElementById('newPrivateEmail').value.trim().toLowerCase();
-            if(email && email !== myEmail) {
-                document.getElementById('newPrivateEmail').value = '';
-                openRoom('private', email);
-            } else {
-                alert("Masukkan email yang valid (bukan email kamu sendiri).");
-            }
-        }
-
-        // --- FETCHING DATA ---
-        async function loadPrivateContacts() {
-            // Ambil semua pesan private dimana kita terlibat
-            const { data } = await supabase.from('private_chat')
-                .select('sender, receiver')
-                .or(`sender.eq.${myEmail},receiver.eq.${myEmail}`);
-            
-            if(data) {
-                // Cari email lawan bicara yang unik
-                const contacts = new Set();
-                data.forEach(msg => {
-                    if(msg.sender !== myEmail) contacts.add(msg.sender);
-                    if(msg.receiver !== myEmail) contacts.add(msg.receiver);
-                });
-
-                const listDiv = document.getElementById('privateChatList');
-                listDiv.innerHTML = '';
-                contacts.forEach(contact => {
-                    const shortName = contact.split('@')[0];
-                    const div = document.createElement('div');
-                    div.className = 'chat-item';
-                    div.onclick = () => openRoom('private', contact);
-                    div.innerHTML = `
-                        <div class="avatar" style="background: ${getColor(contact)};">${shortName.charAt(0).toUpperCase()}</div>
-                        <div class="chat-info">
-                            <div class="chat-name">${shortName}</div>
-                            <div class="chat-preview">Japri pribadi...</div>
-                        </div>
-                    `;
-                    listDiv.appendChild(div);
-                });
-            }
+        function showAuthScreen() { document.getElementById('authScreen').style.display = 'flex'; document.getElementById('chatScreen').style.display = 'none'; }
+        
+        function showChatScreen() {
+            document.getElementById('authScreen').style.display = 'none'; document.getElementById('chatScreen').style.display = 'flex';
+            document.getElementById('userDisplay').innerText = `Masuk sebagai: ${currentUser.email.split('@')[0]}`;
+            loadMessages(); subscribeToMessages();
         }
 
         async function loadMessages() {
-            let query = supabase.from(currentTable).select('*').order('created_at', { ascending: true });
-            
-            if(currentMode === 'private') {
-                // Filter hanya pesan antara aku dan dia
-                query = query.or(`and(sender.eq.${myEmail},receiver.eq.${targetEmail}),and(sender.eq.${targetEmail},receiver.eq.${myEmail})`);
-            }
-
-            const { data } = await query;
-            if (data) {
-                document.getElementById('chatMessages').innerHTML = '';
-                data.forEach(msg => renderMessage(msg));
+            const { data, error } = await supabaseClient.from('global_chat').select('*').order('created_at', { ascending: true });
+            if (!error && data) {
+                const chatBox = document.getElementById('chatMessages');
+                chatBox.innerHTML = ''; data.forEach(msg => renderMessage(msg)); scrollToBottom();
             }
         }
 
         async function sendMessage() {
             const input = document.getElementById('messageInput');
-            const text = escapeHTML(input.value.trim());
+            const text = escapeHTML(input.value.trim()); // Amankan teks
             if (!text) return;
             
+            const username = currentUser.email.split('@')[0];
             input.value = ''; 
             
             let finalMessage = text;
+            // Kalau lagi membalas, kita selipkan data balasan di awal pesan
             if (replyingTo) {
-                finalMessage = `|RPLY|${replyingTo.senderName}|${replyingTo.text}|${text}`;
-                cancelReply();
+                finalMessage = `|RPLY|${replyingTo.sender}|${replyingTo.text}|${text}`;
+                cancelReply(); // Selesai membalas, tutup bannernya
             }
 
-            const payload = { sender: myEmail, message: finalMessage };
-            if(currentMode === 'private') {
-                payload.receiver = targetEmail;
-            }
-
-            await supabase.from(currentTable).insert([payload]);
+            await supabaseClient.from('global_chat').insert([{ sender: username, message: finalMessage }]);
             stopTyping(); 
         }
 
         function renderMessage(msg) {
-            // Filter extra: Jangan tampilkan pesan private orang lain jika bocor
-            if(currentMode === 'private') {
-                if(!((msg.sender === myEmail && msg.receiver === targetEmail) || 
-                     (msg.sender === targetEmail && msg.receiver === myEmail))) return;
-            }
-
             const chatBox = document.getElementById('chatMessages');
-            const isMe = msg.sender === myEmail;
-            const senderName = msg.sender.split('@')[0];
+            const username = currentUser.email.split('@')[0];
+            const isMe = msg.sender === username;
 
             const div = document.createElement('div');
             div.id = `msg-${msg.id}`; 
             div.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
             
             const timeText = formatTime(msg.created_at || new Date().toISOString());
-            let senderHtml = (!isMe && currentMode === 'global') ? `<div class="msg-sender" style="color: ${getColor(msg.sender)};">${senderName}</div>` : '';
 
+            let senderHtml = '';
+            if (!isMe) {
+                senderHtml = `<div class="msg-sender" style="color: ${getColorForUser(msg.sender)};">${msg.sender}</div>`;
+            }
+
+            // Cek apakah ini pesan balasan (Reply)
             let displayMsg = msg.message;
-            let pureText = displayMsg; 
+            let pureTextForReply = displayMsg; // Teks yang akan disimpan kalau pesan ini dibalas lagi
             let quoteHtml = '';
 
             if (displayMsg.startsWith('|RPLY|')) {
-                const p = displayMsg.split('|');
-                if (p.length >= 5) {
-                    pureText = p.slice(4).join('|');
-                    displayMsg = pureText;
-                    quoteHtml = `<div class="msg-quote"><strong>${p[2]}</strong><br>${p[3]}</div>`;
+                const parts = displayMsg.split('|');
+                if (parts.length >= 5) {
+                    const rSender = parts[2];
+                    const rText = parts[3];
+                    displayMsg = parts.slice(4).join('|'); // Sisa pesan aslinya
+                    pureTextForReply = displayMsg;
+                    quoteHtml = `<div class="msg-quote"><strong>${rSender}</strong><br>${rText}</div>`;
                 }
             }
 
-            div.innerHTML = `${senderHtml}${quoteHtml}<div class="msg-text">${displayMsg}</div><div class="msg-time">${timeText}</div>`;
+            div.innerHTML = `
+                ${senderHtml}
+                ${quoteHtml}
+                <div class="msg-text">${displayMsg}</div>
+                <div class="msg-footer"><span class="msg-time">${timeText}</span></div>
+            `;
             
+            // Event Klik untuk memunculkan Menu
             div.onclick = function(e) {
-                e.stopPropagation();
-                selectedMsg = { id: msg.id, senderName: senderName, text: pureText, isMe: isMe, table: currentTable };
+                e.stopPropagation(); // Biar kliknya gak tembus ke belakang
+                selectedMsg = { id: msg.id, sender: msg.sender, text: pureTextForReply, isMe: isMe };
                 
                 const menu = document.getElementById('actionMenu');
                 menu.style.display = 'flex';
-                menu.style.left = Math.min(e.pageX, window.innerWidth - 130) + 'px';
-                menu.style.top = Math.min(e.pageY, window.innerHeight - 100) + 'px';
+                
+                // Atur posisi menu pas di tempat mouse diklik
+                // Pakai Math.min biar menu nggak keluar dari layar kanan/bawah
+                const menuWidth = 120; 
+                const menuHeight = 90;
+                menu.style.left = Math.min(e.pageX, window.innerWidth - menuWidth - 10) + 'px';
+                menu.style.top = Math.min(e.pageY, window.innerHeight - menuHeight - 10) + 'px';
+                
+                // Tampilkan tombol Hapus hanya jika itu pesan kita
                 document.getElementById('btnMenuDelete').style.display = isMe ? 'block' : 'none';
             };
 
             chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            scrollToBottom();
         }
 
-        // --- MENU & BALAS ---
-        document.onclick = () => document.getElementById('actionMenu').style.display = 'none';
+        // --- FUNGSI MENU & MEMBALAS ---
+        // Sembunyikan menu kalau ngeklik di mana saja selain pesan
+        document.onclick = function() {
+            document.getElementById('actionMenu').style.display = 'none';
+        };
 
         function actionReply() {
             if (!selectedMsg) return;
             replyingTo = selectedMsg;
             document.getElementById('replyBanner').style.display = 'flex';
-            document.getElementById('replyText').innerHTML = `<strong>Membalas ${replyingTo.senderName}:</strong> ${replyingTo.text}`;
+            document.getElementById('replyText').innerHTML = `<strong>Membalas ${replyingTo.sender}:</strong> ${replyingTo.text}`;
             document.getElementById('messageInput').focus();
+            document.getElementById('actionMenu').style.display = 'none';
         }
 
-        function cancelReply() { replyingTo = null; document.getElementById('replyBanner').style.display = 'none'; }
+        function cancelReply() {
+            replyingTo = null;
+            document.getElementById('replyBanner').style.display = 'none';
+        }
 
         async function actionDelete() {
-            if(selectedMsg && selectedMsg.isMe && confirm("Hapus pesan ini?")) {
-                await supabase.from(selectedMsg.table).delete().eq('id', selectedMsg.id);
+            if(selectedMsg && selectedMsg.isMe) {
+                if(confirm("Yakin mau hapus pesan ini?")) {
+                    await supabaseClient.from('global_chat').delete().eq('id', selectedMsg.id);
+                }
             }
+            document.getElementById('actionMenu').style.display = 'none';
         }
 
+        function scrollToBottom() { const chatBox = document.getElementById('chatMessages'); chatBox.scrollTop = chatBox.scrollHeight; }
         function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
 
-        // --- TYPING SENSOR ---
+        // --- FUNGSI SEDANG MENGETIK (TYPING) ---
         function handleTyping() {
+            const username = currentUser.email.split('@')[0];
             if (!isTyping) {
                 isTyping = true;
-                chatChannel.send({ type: 'broadcast', event: 'typing', payload: { email: myEmail, isTyping: true, room: currentMode === 'global' ? 'global' : targetEmail } });
+                chatChannel.send({ type: 'broadcast', event: 'typing', payload: { username: username, isTyping: true } });
             }
             clearTimeout(typingTimer);
-            typingTimer = setTimeout(stopTyping, 2000);
+            typingTimer = setTimeout(() => { stopTyping(); }, 2000);
         }
 
         function stopTyping() {
             if (isTyping) {
                 isTyping = false;
-                chatChannel.send({ type: 'broadcast', event: 'typing', payload: { email: myEmail, isTyping: false, room: currentMode === 'global' ? 'global' : targetEmail } });
+                chatChannel.send({ type: 'broadcast', event: 'typing', payload: { username: currentUser.email.split('@')[0], isTyping: false } });
             }
         }
 
-        // --- REALTIME UTAMA ---
-        function setupRealtime() {
-            if(chatChannel) supabase.removeChannel(chatChannel);
-            
-            chatChannel = supabase.channel('pufutara_wa', { config: { broadcast: { self: false } } });
-            
-            // Dengerin Global
-            chatChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'global_chat' }, payload => handleRealtime(payload, 'global_chat'));
-            
-            // Dengerin Private
-            chatChannel.on('postgres_changes', { event: '*', schema: 'public', table: 'private_chat' }, payload => handleRealtime(payload, 'private_chat'));
-            
-            // Dengerin Ngetik
-            chatChannel.on('broadcast', { event: 'typing' }, payload => {
-                const data = payload.payload;
-                if(data.email === myEmail) return;
-                
-                const ind = document.getElementById('typingIndicator');
-                // Cek apakah sinyal ngetik ini buat ruangan yang lagi kita buka
-                let show = false;
-                if(currentMode === 'global' && data.room === 'global') show = true;
-                if(currentMode === 'private' && data.room === myEmail && data.email === targetEmail) show = true;
-
-                if(data.isTyping && show) {
-                    ind.innerText = `${data.email.split('@')[0]} sedang mengetik...`;
-                    ind.style.display = 'block';
-                } else {
-                    ind.style.display = 'none';
-                }
-            }).subscribe();
+        function updateTypingUI(username, isUserTyping) {
+            if (username === currentUser.email.split('@')[0]) return;
+            if (isUserTyping) typingUsers.add(username); else typingUsers.delete(username);
+            const indicator = document.getElementById('typingIndicator');
+            if (typingUsers.size > 0) {
+                indicator.innerText = `${Array.from(typingUsers).join(', ')} sedang mengetik...`;
+                indicator.style.display = 'block';
+            } else indicator.style.display = 'none';
         }
 
-        function handleRealtime(payload, table) {
-            if(payload.eventType === 'INSERT' && currentTable === table) {
-                renderMessage(payload.new);
-            } else if (payload.eventType === 'DELETE' && currentTable === table) {
-                const msgDiv = document.getElementById(`msg-${payload.old.id}`); 
-                if (msgDiv) msgDiv.remove();
-            } else if (payload.eventType === 'INSERT' && currentMode === 'list' && table === 'private_chat') {
-                // Kalau lagi di menu awal ada chat masuk, refresh list
-                loadPrivateContacts();
-            }
+        function subscribeToMessages() {
+            chatChannel = supabaseClient.channel('public:global_chat', { config: { broadcast: { self: false } } });
+            chatChannel
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, payload => { renderMessage(payload.new); })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'global_chat' }, payload => {
+                    const msgDiv = document.getElementById(`msg-${payload.old.id}`); if (msgDiv) msgDiv.remove();
+                })
+                .on('broadcast', { event: 'typing' }, payload => { updateTypingUI(payload.payload.username, payload.payload.isTyping); })
+                .subscribe();
         }
 
         checkSession();
