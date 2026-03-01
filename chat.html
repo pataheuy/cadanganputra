@@ -8,11 +8,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body { background-color: #f5f5f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        
-        /* Container Utama */
         .app-container { width: 100%; max-width: 400px; background: white; height: 90vh; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* Layar Auth */
         .auth-screen { padding: 40px 30px; display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center; }
         .auth-screen h1 { margin-bottom: 10px; font-size: 1.8rem; }
         .auth-screen p { color: #666; margin-bottom: 30px; font-size: 0.9rem; }
@@ -22,18 +18,14 @@
         .btn-primary:hover { background: #333; }
         .btn-secondary { background: #eee; color: #111; }
         .btn-secondary:hover { background: #ddd; }
-
-        /* Layar Chat */
         .chat-screen { display: none; flex-direction: column; height: 100%; }
         .chat-header { background: #111; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .btn-logout { background: red; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; }
-        
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #fafafa; }
         .message { max-width: 80%; padding: 10px 15px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; }
         .msg-other { background: #e9ecef; align-self: flex-start; border-bottom-left-radius: 2px; }
         .msg-me { background: #111; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg-sender { font-size: 0.7rem; font-weight: bold; margin-bottom: 5px; opacity: 0.7; }
-
         .chat-input-area { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; }
         .chat-input-area input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
         .btn-send { background: #111; color: white; border: none; padding: 0 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
@@ -60,8 +52,7 @@
                 </div>
                 <button class="btn-logout" onclick="logout()">Logout</button>
             </div>
-            <div class="chat-messages" id="chatMessages">
-                </div>
+            <div class="chat-messages" id="chatMessages"></div>
             <div class="chat-input-area">
                 <input type="text" id="messageInput" placeholder="Ketik pesan..." onkeypress="handleEnter(event)">
                 <button class="btn-send" onclick="sendMessage()">Kirim</button>
@@ -70,16 +61,12 @@
     </div>
 
     <script>
-        // ==========================================
-        // MASUKKAN URL & KEY SUPABASE KAMU DI SINI
-        // ==========================================
         const SUPABASE_URL = 'https://puywjdopumlzvmzbcudr.supabase.co'; 
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eXdqZG9wdW1senZtemJjdWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDE3MTksImV4cCI6MjA4NzkxNzcxOX0.vvThyjtK2SlA9oA9Mr_XOmt1R_tNZk-ib3PO9XpiiSc'; 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
 
-        // --- AUTHENTICATION ---
         async function checkSession() {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
@@ -94,11 +81,10 @@
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
             const { data, error } = await supabase.auth.signUp({ email, password });
-            
             if (error) {
                 document.getElementById('authError').innerText = error.message;
             } else {
-                checkSession(); // Langsung masuk karena verifikasi email sudah dimatikan
+                checkSession();
             }
         }
 
@@ -106,7 +92,6 @@
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            
             if (error) {
                 document.getElementById('authError').innerText = "Email atau Password salah!";
             } else {
@@ -120,7 +105,6 @@
             showAuthScreen();
         }
 
-        // --- UI SWITCHER ---
         function showAuthScreen() {
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('chatScreen').style.display = 'none';
@@ -129,20 +113,14 @@
         function showChatScreen() {
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('chatScreen').style.display = 'flex';
-            // Potong email biar jadi username (misal: aku@gmail.com jadi "aku")
             const username = currentUser.email.split('@')[0];
             document.getElementById('userDisplay').innerText = `Masuk sebagai: ${username}`;
             loadMessages();
             subscribeToMessages();
         }
 
-        // --- CHAT LOGIC ---
         async function loadMessages() {
-            const { data, error } = await supabase
-                .from('global_chat')
-                .select('*')
-                .order('created_at', { ascending: true });
-            
+            const { data, error } = await supabase.from('global_chat').select('*').order('created_at', { ascending: true });
             if (!error && data) {
                 const chatBox = document.getElementById('chatMessages');
                 chatBox.innerHTML = '';
@@ -155,29 +133,19 @@
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (!text) return;
-
             const username = currentUser.email.split('@')[0];
             input.value = '';
-
-            const { error } = await supabase
-                .from('global_chat')
-                .insert([{ sender: username, message: text }]);
-            
-            if (error) console.error("Gagal kirim:", error);
+            await supabase.from('global_chat').insert([{ sender: username, message: text }]);
         }
 
         function renderMessage(msg) {
             const chatBox = document.getElementById('chatMessages');
             const username = currentUser.email.split('@')[0];
             const isMe = msg.sender === username;
-
             const div = document.createElement('div');
             div.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
-            
-            // Tampilkan nama pengirim jika bukan diri sendiri
             const senderName = isMe ? '' : `<div class="msg-sender">${msg.sender}</div>`;
             div.innerHTML = `${senderName}${msg.message}`;
-            
             chatBox.appendChild(div);
             scrollToBottom();
         }
@@ -191,17 +159,12 @@
             if (e.key === 'Enter') sendMessage();
         }
 
-        // --- REAL-TIME LISTENER ---
         function subscribeToMessages() {
-            supabase
-                .channel('public:global_chat')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, payload => {
-                    renderMessage(payload.new);
-                })
-                .subscribe();
+            supabase.channel('public:global_chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, payload => {
+                renderMessage(payload.new);
+            }).subscribe();
         }
 
-        // Jalankan saat web dibuka
         checkSession();
     </script>
 </body>
