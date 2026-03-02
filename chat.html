@@ -3,309 +3,250 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pufutara Chat</title>
+    <title>Pufutara Chat </title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Segoe UI', sans-serif; }
-        body { background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; position: relative; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; }
         
-        /* CONTAINER DISESUAIKAN (Lebar +20%, Tinggi +15%) */
+        /* UKURAN CUSTOM: Lebar 720px, Tinggi 75vh */
         .app-container { 
-            width: 100%; 
-            max-width: 720px; /* Naik dari 600px */
-            background: #ffffff; 
-            height: 75vh;     /* Naik dari 65vh */
-            border-radius: 12px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1); 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-            position: relative; 
+            width: 100%; max-width: 720px; height: 75vh; 
+            background: #fff; border-radius: 12px; overflow: hidden; 
+            display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
-        /* Batas responsif HP disesuaikan ke 720px */
-        @media (max-width: 720px) { 
-            .app-container { max-width: 100%; height: 100vh; border-radius: 0; } 
-        }
-        
-        /* Header & Status */
-        .wa-header { background: #111111; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .wa-header h2 { font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-        .back-btn { background: none; border: none; color: white; font-size: 1.1rem; cursor: pointer; display: none; }
-        .status-dot { width: 10px; height: 10px; background: #bbb; border-radius: 50%; display: inline-block; border: 2px solid #fff; }
-        .status-online { background: #34C759 !important; box-shadow: 0 0 5px #34C759; }
+        @media (max-width: 720px) { .app-container { max-width: 100%; height: 100vh; border-radius: 0; } }
 
-        /* Auth Screen */
-        .auth-screen { padding: 30px; display: flex; flex-direction: column; justify-content: center; flex: 1; text-align: center; }
-        .input-field { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; }
-        .btn { width: 100%; padding: 10px; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: bold; cursor: pointer; }
-        .btn-primary { background: #111111; color: white; margin-bottom: 10px; }
-        
-        /* Chat List */
-        .chat-list-screen { display: none; flex-direction: column; flex: 1; overflow-y: auto; background: white; }
-        .new-chat-box { padding: 12px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; gap: 8px; }
-        .new-chat-box input { flex: 1; padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 0.9rem; }
-        .chat-item { padding: 12px 20px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #f9f9f9; }
-        .chat-item:hover { background: #f5f5f5; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 1rem; position: relative; }
+        /* Header */
+        .wa-header { background: #111; color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .wa-header h2 { font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .status-dot { width: 10px; height: 10px; background: #bbb; border-radius: 50%; border: 2px solid #fff; }
+        .status-online { background: #34C759; box-shadow: 0 0 5px #34C759; }
 
-        /* Chat Room */
+        /* Chat Room Elements */
         .chat-room-screen { display: none; flex-direction: column; flex: 1; background: #f9f9f9; overflow: hidden; }
         .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .message { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; display: flex; flex-direction: column; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; }
-        .msg-other { background: #ffffff; align-self: flex-start; border-top-left-radius: 2px; border: 1px solid #eee; }
-        .msg-me { background: #111111; align-self: flex-end; border-top-right-radius: 2px; color: #ffffff; }
+        .message { max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 0.9rem; position: relative; cursor: pointer; }
+        .msg-me { background: #111; color: #fff; align-self: flex-end; border-top-right-radius: 2px; }
+        .msg-other { background: #fff; color: #111; align-self: flex-start; border-top-left-radius: 2px; border: 1px solid #eee; }
         
         /* Reply & Footer */
-        .msg-quote { background: rgba(0,0,0,0.05); border-left: 3px solid #111; padding: 5px 8px; margin-bottom: 6px; border-radius: 4px; font-size: 0.75rem; color: #555; }
-        .msg-me .msg-quote { background: rgba(255,255,255,0.1); border-left: 3px solid #fff; color: #ddd; }
-        .reply-banner { padding: 8px 15px; background: #f5f5f5; font-size: 0.75rem; display: none; justify-content: space-between; align-items: center; border-top: 1px solid #eee; }
-        .msg-footer { display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 4px; }
-        .msg-time { font-size: 0.6rem; opacity: 0.6; }
-        .check-mark { font-size: 0.7rem; color: #888; }
-        .is-read { color: #3498db !important; }
+        .msg-quote { background: rgba(0,0,0,0.05); border-left: 3px solid #111; padding: 5px; margin-bottom: 5px; border-radius: 4px; font-size: 0.75rem; }
+        .msg-me .msg-quote { background: rgba(255,255,255,0.1); border-left-color: #fff; color: #ccc; }
+        .msg-footer { display: flex; justify-content: flex-end; align-items: center; gap: 4px; font-size: 0.65rem; margin-top: 4px; opacity: 0.7; }
+        .is-read { color: #3498db; }
 
-        /* Input Area */
-        .chat-input-area { padding: 10px 15px; background: #ffffff; display: flex; gap: 10px; align-items: center; border-top: 1px solid #eee; }
-        .chat-input-area input { flex: 1; padding: 10px 15px; border: 1px solid #ddd; border-radius: 20px; outline: none; background: #fafafa; font-size: 0.9rem; }
-        .btn-send { background: #111111; color: white; border: none; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        /* Inputs */
+        .chat-input-area { padding: 12px; background: #fff; display: flex; gap: 10px; border-top: 1px solid #eee; }
+        .chat-input-area input { flex: 1; padding: 10px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
+        .btn-send { background: #111; color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
 
-        .action-menu { position: absolute; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: none; flex-direction: column; overflow: hidden; z-index: 1000; min-width: 110px; border: 1px solid #eee; }
-        .action-menu button { padding: 10px 15px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.85rem; }
-        .typing-indicator { font-size: 0.7rem; color: #555; font-style: italic; display: none; position: absolute; top: 55px; left: 0; width: 100%; background: rgba(255,255,255,0.95); padding: 5px 20px; z-index: 5; border-bottom: 1px solid #eee; }
+        /* Menus */
+        .action-menu { position: absolute; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none; flex-direction: column; z-index: 100; border: 1px solid #eee; }
+        .action-menu button { padding: 10px 20px; border: none; background: none; text-align: left; cursor: pointer; font-size: 0.85rem; }
+        .action-menu button:hover { background: #f5f5f5; }
+        .reply-banner { padding: 8px 15px; background: #eee; font-size: 0.8rem; display: none; justify-content: space-between; border-top: 1px solid #ddd; }
+        
+        /* Auth & List */
+        .auth-screen, .chat-list-screen { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+        .chat-item { padding: 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #111; color: #fff; display: flex; justify-content: center; align-items: center; font-weight: bold; position: relative; }
     </style>
 </head>
 <body>
 
     <div id="actionMenu" class="action-menu">
         <button onclick="actionReply()">Balas ↩️</button>
-        <button id="btnMenuDelete" style="color: #ff4d4d;" onclick="actionDelete()">Hapus 🗑️</button>
+        <button id="btnDel" style="color:red" onclick="actionDelete()">Hapus 🗑️</button>
     </div>
 
     <div class="app-container">
         <div class="wa-header">
             <h2>
-                <button class="back-btn" id="backBtn" onclick="goBack()">❮</button>
+                <button id="backBtn" onclick="goBack()" style="background:none; border:none; color:#fff; cursor:pointer; display:none;">❮</button>
                 <span id="headerTitle">Pufutara Chat</span>
                 <span id="headerStatus" class="status-dot"></span>
             </h2>
-            <button style="background:none; border:none; color:white; font-size:0.75rem; cursor:pointer;" onclick="logout()" id="logoutBtn">Logout</button>
+            <button onclick="logout()" style="background:none; border:none; color:#fff; font-size:0.7rem; cursor:pointer;">Logout</button>
         </div>
 
-        <div class="auth-screen" id="authScreen">
-            <h2 style="margin-bottom: 15px; font-size: 1.2rem;">Pufutara Login</h2>
-            <input type="email" id="emailInput" class="input-field" placeholder="Email">
-            <input type="password" id="passwordInput" class="input-field" placeholder="Password">
-            <button class="btn btn-primary" onclick="login()">Login</button>
-            <button class="btn" style="background:#f5f5f5; border: 1px solid #ddd; font-size: 0.8rem;" onclick="register()">Daftar Akun Baru</button>
-            <p id="authError" style="color: red; font-size: 0.75rem; margin-top: 5px;"></p>
+        <div id="authScreen" class="auth-screen">
+            <input type="email" id="emailIn" style="padding:10px; margin-bottom:10px;" placeholder="Email">
+            <input type="password" id="passIn" style="padding:10px; margin-bottom:10px;" placeholder="Password">
+            <button onclick="login()" style="padding:10px; background:#111; color:#fff; border:none; border-radius:5px; cursor:pointer;">Masuk / Daftar</button>
+            <p id="authErr" style="color:red; font-size:0.8rem; margin-top:10px;"></p>
         </div>
 
-        <div class="chat-list-screen" id="chatListScreen">
-            <div class="new-chat-box">
-                <input type="email" id="newPrivateEmail" placeholder="Email teman...">
-                <button onclick="startPrivateChatFromInput()" style="background:#111; color:white; border:none; border-radius:20px; padding:0 12px; cursor:pointer; font-size:0.8rem;">Chat</button>
+        <div id="chatListScreen" class="chat-list-screen" style="display:none;">
+            <div style="display:flex; gap:5px; margin-bottom:15px;">
+                <input type="email" id="newChatEmail" style="flex:1; padding:8px; border-radius:5px; border:1px solid #ddd;" placeholder="Email teman...">
+                <button onclick="startPrivateChat()" style="padding:5px 15px; background:#111; color:#fff; border:none; border-radius:5px;">Chat</button>
             </div>
             <div class="chat-item" onclick="openRoom('global')">
-                <div class="avatar" style="background: #111;">🌍</div>
-                <div class="chat-info"><div class="chat-name">Grup Global</div><div class="chat-preview">Publik</div></div>
+                <div class="avatar">🌍</div>
+                <div><strong>Grup Global</strong><br><small>Ngobrol bareng semua</small></div>
             </div>
-            <div id="privateChatList"></div>
+            <div id="privateList"></div>
         </div>
 
-        <div class="chat-room-screen" id="chatRoomScreen">
-            <div id="typingIndicator" class="typing-indicator">...</div>
-            <div class="chat-messages" id="chatMessages"></div>
-            
+        <div id="chatRoomScreen" class="chat-room-screen">
+            <div id="chatMessages" class="chat-messages"></div>
             <div id="replyBanner" class="reply-banner">
-                <div class="reply-banner-content" id="replyText"></div>
-                <div onclick="cancelReply()" style="cursor:pointer; font-weight:bold; padding: 0 5px;">✕</div>
+                <div id="replyTxt"></div>
+                <div onclick="cancelReply()" style="cursor:pointer;">✕</div>
             </div>
-
             <div class="chat-input-area">
-                <input type="text" id="messageInput" placeholder="Tulis pesan..." onkeypress="handleEnter(event)" oninput="handleTyping()" autocomplete="off">
-                <button class="btn-send" onclick="sendMessage()">➤</button>
+                <input type="text" id="msgIn" placeholder="Ketik pesan..." onkeypress="if(e.key==='Enter')send()">
+                <button class="btn-send" onclick="send()">➤</button>
             </div>
         </div>
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://puywjdopumlzvmzbcudr.supabase.co'; 
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eXdqZG9wdW1senZtemJjdWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDE3MTksImV4cCI6MjA4NzkxNzcxOX0.vvThyjtK2SlA9oA9Mr_XOmt1R_tNZk-ib3PO9XpiiSc'; 
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
-        let currentUser = null, myEmail = '', currentMode = 'list', targetEmail = '', currentTable = 'global_chat';
-        let chatChannel = null, onlineUsers = {}, selectedMsg = null, replyingTo = null;
+        const SUPABASE_URL = 'https://puywjdopumlzvmzbcudr.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eXdqZG9wdW1senZtemJjdWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDE3MTksImV4cCI6MjA4NzkxNzcxOX0.vvThyjtK2SlA9oA9Mr_XOmt1R_tNZk-ib3PO9XpiiSc';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const colors = ['#FF3B30', '#34C759', '#007AFF', '#FF9500', '#AF52DE', '#FF2D55', '#5856D6', '#00C7BE'];
-        function getColor(str) {
-            let hash = 0; for(let i=0; i<str.length; i++) hash = str.charCodeAt(i) + ((hash<<5)-hash);
-            return colors[Math.abs(hash)%colors.length];
+        let user = null, myEmail = '', mode = 'list', target = '', table = 'global_chat';
+        let channel = null, onlineUsers = {}, selected = null, replying = null;
+
+        // 1. SESSION & AUTH
+        async function check() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) { user = session.user; myEmail = user.email; showList(); setupRealtime(); }
         }
-
-        async function checkSession() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) { currentUser = session.user; myEmail = currentUser.email; openRoom('global'); setupRealtime(); } 
-            else { showAuthScreen(); }
-        }
-
         async function login() {
-            const email = document.getElementById('emailInput').value, password = document.getElementById('passwordInput').value;
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) document.getElementById('authError').innerText = error.message; else checkSession();
+            const e = document.getElementById('emailIn').value, p = document.getElementById('passIn').value;
+            const { error } = await supabase.auth.signInWithPassword({ email: e, password: p });
+            if (error) { const { error: signUpErr } = await supabase.auth.signUp({ email: e, password: p }); if(signUpErr) alert(signUpErr.message); else check(); }
+            else check();
         }
-        async function register() {
-            const email = document.getElementById('emailInput').value, password = document.getElementById('passwordInput').value;
-            const { error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) document.getElementById('authError').innerText = error.message; else checkSession();
-        }
-        async function logout() { await supabaseClient.auth.signOut(); location.reload(); }
+        function logout() { supabase.auth.signOut(); location.reload(); }
 
-        function showAuthScreen() {
-            document.getElementById('authScreen').style.display = 'flex';
-            document.getElementById('chatListScreen').style.display = 'none';
-            document.getElementById('chatRoomScreen').style.display = 'none';
-        }
-
-        async function showChatList() {
-            currentMode = 'list';
-            document.getElementById('authScreen').style.display = 'none';
+        // 2. NAVIGATION
+        function showList() {
+            mode = 'list'; document.getElementById('authScreen').style.display = 'none';
             document.getElementById('chatRoomScreen').style.display = 'none';
             document.getElementById('chatListScreen').style.display = 'flex';
-            document.getElementById('headerTitle').innerText = 'Daftar Chat';
             document.getElementById('backBtn').style.display = 'none';
             document.getElementById('headerStatus').style.display = 'none';
-            await loadPrivateContacts();
+            document.getElementById('headerTitle').innerText = 'Pufutara Chat';
+            loadList();
         }
 
-        async function openRoom(mode, email = '') {
-            currentMode = mode; targetEmail = email;
-            currentTable = (mode === 'global') ? 'global_chat' : 'private_chat';
-            document.getElementById('authScreen').style.display = 'none';
+        async function openRoom(m, t = '') {
+            mode = m; target = t; table = (m === 'global') ? 'global_chat' : 'private_chat';
             document.getElementById('chatListScreen').style.display = 'none';
             document.getElementById('chatRoomScreen').style.display = 'flex';
-            document.getElementById('backBtn').style.display = 'inline-block';
-            document.getElementById('headerTitle').innerText = mode === 'global' ? '🌍 Grup Global' : `${email.split('@')[0]}`;
-            updateHeaderStatus(email);
+            document.getElementById('backBtn').style.display = 'inline';
+            document.getElementById('headerTitle').innerText = m === 'global' ? '🌍 Global' : t.split('@')[0];
+            updateStatus();
             document.getElementById('chatMessages').innerHTML = '';
-            await loadMessages();
-            if(mode === 'private') markMessagesAsRead(email);
+            await loadMsgs();
+            if(m === 'private') markRead();
         }
 
-        function updateHeaderStatus(email) {
-            const dot = document.getElementById('headerStatus');
-            if(currentMode === 'global') { dot.style.display = 'none'; return; }
-            dot.style.display = 'inline-block';
-            dot.className = onlineUsers[email] ? 'status-dot status-online' : 'status-dot';
+        // 3. CORE CHAT LOGIC (PAGINATION / TURBO FIX)
+        async function loadMsgs() {
+            let q = supabase.from(table).select('*').order('created_at', { ascending: false }).limit(50);
+            if(mode === 'private') q = q.or(`and(sender.eq.${myEmail},receiver.eq.${target}),and(sender.eq.${target},receiver.eq.${myEmail})`);
+            
+            const { data } = await q;
+            if (data) data.reverse().forEach(m => render(m));
         }
 
-        async function loadMessages() {
-            let q = supabaseClient.from(currentTable).select('*').order('created_at', { ascending: true });
-            if(currentMode === 'private') q = q.or(`and(sender.eq.${myEmail},receiver.eq.${targetEmail}),and(sender.eq.${targetEmail},receiver.eq.${myEmail})`);
-            const { data } = await q; if (data) data.forEach(msg => renderMessage(msg));
+        async function send() {
+            const inp = document.getElementById('msgIn'), txt = inp.value.trim();
+            if (!txt) return; inp.value = '';
+            let final = replying ? `|RPLY|${replying.sender}|${replying.text}|${txt}` : txt;
+            const pld = { sender: myEmail, message: final, is_read: false };
+            if(mode === 'private') pld.receiver = target;
+            await supabase.from(table).insert([pld]);
+            cancelReply();
         }
 
-        async function markMessagesAsRead(senderEmail) {
-            await supabaseClient.from('private_chat').update({ is_read: true }).eq('sender', senderEmail).eq('receiver', myEmail).eq('is_read', false);
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('messageInput'), text = input.value.trim();
-            if (!text) return; input.value = ''; 
-            let finalMsg = replyingTo ? `|RPLY|${replyingTo.senderName}|${replyingTo.text}|${text}` : text;
-            const payload = { sender: myEmail, message: finalMsg, is_read: false };
-            if(currentMode === 'private') payload.receiver = targetEmail;
-            const { data } = await supabaseClient.from(currentTable).insert([payload]).select();
-            if (data) renderMessage(data[0]); cancelReply();
-        }
-
-        function renderMessage(msg) {
-            if (document.getElementById(`msg-${msg.id}`)) {
-                if(msg.is_read) document.getElementById(`check-${msg.id}`)?.classList.add('is-read');
+        function render(m) {
+            if (document.getElementById(`msg-${m.id}`)) {
+                if(m.is_read && document.getElementById(`ck-${m.id}`)) document.getElementById(`ck-${m.id}`).classList.add('is-read');
                 return;
             }
-            const chatBox = document.getElementById('chatMessages'), isMe = msg.sender === myEmail, senderName = msg.sender.split('@')[0];
-            const div = document.createElement('div'); div.id = `msg-${msg.id}`; div.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
+            const box = document.getElementById('chatMessages'), isMe = m.sender === myEmail;
+            const div = document.createElement('div'); div.id = `msg-${m.id}`; div.className = `message ${isMe?'msg-me':'msg-other'}`;
             
-            let displayMsg = msg.message, quoteHtml = '', pureText = displayMsg;
-            if (displayMsg.startsWith('|RPLY|')) {
-                const p = displayMsg.split('|');
-                if (p.length >= 5) { pureText = p.slice(4).join('|'); displayMsg = pureText; quoteHtml = `<div class="msg-quote"><strong>${p[2]}</strong><br>${p[3]}</div>`; }
+            let txt = m.message, quote = '';
+            if (txt.startsWith('|RPLY|')) {
+                const p = txt.split('|'); 
+                quote = `<div class="msg-quote"><strong>${p[2].split('@')[0]}</strong><br>${p[3]}</div>`;
+                txt = p.slice(4).join('|');
             }
 
-            let sHtml = (!isMe && currentMode === 'global') ? `<div class="msg-sender" style="color: ${getColor(msg.sender)}; font-size:0.75rem;">${senderName}</div>` : '';
-            let checkHtml = (isMe && currentMode === 'private') ? `<span id="check-${msg.id}" class="check-mark ${msg.is_read ? 'is-read' : ''}">✓✓</span>` : '';
-            const timeStr = new Date(msg.created_at).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'});
-
-            div.innerHTML = `${sHtml}${quoteHtml}<div class="msg-text">${displayMsg}</div>
-                             <div class="msg-footer"><span class="msg-time">${timeStr}</span>${checkHtml}</div>`;
+            const time = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            const checks = (isMe && mode === 'private') ? `<span id="ck-${m.id}" class="check-mark ${m.is_read?'is-read':''}">✓✓</span>` : '';
             
+            div.innerHTML = `${quote}<div>${txt}</div><div class="msg-footer">${time} ${checks}</div>`;
             div.onclick = (e) => {
-                e.stopPropagation(); selectedMsg = { id: msg.id, senderName, text: pureText, isMe, table: currentTable };
-                const menu = document.getElementById('actionMenu'); menu.style.display = 'flex';
-                menu.style.left = Math.min(e.pageX, window.innerWidth - 120) + 'px'; menu.style.top = Math.min(e.pageY, window.innerHeight - 100) + 'px';
-                document.getElementById('btnMenuDelete').style.display = isMe ? 'block' : 'none';
+                e.stopPropagation(); selected = { id: m.id, sender: m.sender, text: txt, isMe };
+                const menu = document.getElementById('actionMenu');
+                menu.style.display = 'flex'; menu.style.left = e.pageX+'px'; menu.style.top = e.pageY+'px';
+                document.getElementById('btnDel').style.display = isMe ? 'block' : 'none';
             };
-
-            chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight;
+            box.appendChild(div); box.scrollTop = box.scrollHeight;
         }
 
-        document.onclick = () => document.getElementById('actionMenu').style.display = 'none';
-        function actionReply() {
-            if (!selectedMsg) return; replyingTo = selectedMsg;
-            document.getElementById('replyBanner').style.display = 'flex';
-            document.getElementById('replyText').innerHTML = `Balas ${replyingTo.senderName}: ${replyingTo.text}`;
-            document.getElementById('messageInput').focus();
+        // 4. FEATURES (REPLY, DELETE, STATUS)
+        function actionReply() { 
+            replying = selected; document.getElementById('replyBanner').style.display = 'flex';
+            document.getElementById('replyTxt').innerText = `Balas ${selected.sender.split('@')[0]}: ${selected.text}`;
         }
-        function cancelReply() { replyingTo = null; document.getElementById('replyBanner').style.display = 'none'; }
-        async function actionDelete() { if(selectedMsg?.isMe && confirm("Hapus pesan?")) await supabaseClient.from(selectedMsg.table).delete().eq('id', selectedMsg.id); }
+        function cancelReply() { replying = null; document.getElementById('replyBanner').style.display = 'none'; }
+        async function actionDelete() { if(confirm('Hapus?')) await supabase.from(table).delete().eq('id', selected.id); }
+        function markRead() { supabase.from('private_chat').update({is_read:true}).eq('sender',target).eq('receiver',myEmail); }
 
+        // 5. REALTIME
         function setupRealtime() {
-            if(chatChannel) supabaseClient.removeChannel(chatChannel);
-            chatChannel = supabaseClient.channel('pufutara_custom', { config: { presence: { key: myEmail } } });
-            chatChannel.on('presence', { event: 'sync' }, () => {
-                const state = chatChannel.presenceState(); onlineUsers = {};
-                for (const key in state) onlineUsers[key] = true;
-                if(currentMode === 'private') updateHeaderStatus(targetEmail);
-                if(currentMode === 'list') loadPrivateContacts();
+            channel = supabase.channel('pufutara_turbo', { config: { presence: { key: myEmail } } });
+            channel.on('presence', { event: 'sync' }, () => {
+                onlineUsers = {}; const state = channel.presenceState();
+                for (const k in state) onlineUsers[k] = true;
+                updateStatus(); if(mode==='list') loadList();
             })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'global_chat' }, p => handleRealtime(p, 'global_chat'))
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'private_chat' }, p => handleRealtime(p, 'private_chat'))
-            .subscribe(async (s) => { if (s === 'SUBSCRIBED') await chatChannel.track({ online_at: new Date().toISOString() }); });
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'global_chat' }, p => { if(table==='global_chat') handle(p); })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'private_chat' }, p => { if(table==='private_chat') handle(p); })
+            .subscribe(async (s) => { if(s==='SUBSCRIBED') await channel.track({ online_at: new Date() }); });
         }
 
-        function handleRealtime(p, table) {
-            if(p.eventType === 'INSERT' && currentTable === table) { renderMessage(p.new); if(currentMode === 'private' && p.new.sender === targetEmail) markMessagesAsRead(targetEmail); } 
-            else if (p.eventType === 'UPDATE' && currentTable === table) { const ck = document.getElementById(`check-${p.new.id}`); if(ck && p.new.is_read) ck.classList.add('is-read'); }
-            else if (p.eventType === 'DELETE' && currentTable === table) { document.getElementById(`msg-${p.old.id}`)?.remove(); }
+        function handle(p) {
+            if(p.eventType==='INSERT') { render(p.new); if(mode==='private'&&p.new.sender===target) markRead(); }
+            else if(p.eventType==='UPDATE') { const ck=document.getElementById(`ck-${p.new.id}`); if(ck && p.new.is_read) ck.classList.add('is-read'); }
+            else if(p.eventType==='DELETE') { document.getElementById(`msg-${p.old.id}`)?.remove(); }
         }
 
-        async function loadPrivateContacts() {
-            const { data } = await supabaseClient.from('private_chat').select('sender, receiver').or(`sender.eq.${myEmail},receiver.eq.${myEmail}`);
-            if(data) {
-                const contacts = new Set();
-                data.forEach(msg => { if(msg.sender !== myEmail) contacts.add(msg.sender); if(msg.receiver !== myEmail) contacts.add(msg.receiver); });
-                const listDiv = document.getElementById('privateChatList'); listDiv.innerHTML = '';
-                contacts.forEach(contact => {
-                    const isOnline = onlineUsers[contact];
-                    const div = document.createElement('div'); div.className = 'chat-item';
-                    div.onclick = () => openRoom('private', contact);
-                    div.innerHTML = `<div class="avatar" style="background:${getColor(contact)}">${contact.charAt(0).toUpperCase()}<span class="status-dot ${isOnline ? 'status-online' : ''}" style="position:absolute; bottom:0; right:0; border:1px solid white;"></span></div>
-                                     <div class="chat-info"><div class="chat-name">${contact.split('@')[0]}</div><div class="chat-preview">${isOnline?'Online':'Offline'}</div></div>`;
-                    listDiv.appendChild(div);
-                });
-            }
+        async function loadList() {
+            const { data } = await supabase.from('private_chat').select('sender, receiver').or(`sender.eq.${myEmail},receiver.eq.${myEmail}`);
+            const contacts = new Set();
+            if(data) data.forEach(d => contacts.add(d.sender===myEmail?d.receiver:d.sender));
+            const list = document.getElementById('privateList'); list.innerHTML = '';
+            contacts.forEach(c => {
+                const on = onlineUsers[c], div = document.createElement('div'); div.className = 'chat-item';
+                div.onclick = () => openRoom('private', c);
+                div.innerHTML = `<div class="avatar">${c[0].toUpperCase()}<span class="status-dot ${on?'status-online':''}" style="position:absolute;bottom:0;right:0;"></span></div>
+                                 <div><strong>${c.split('@')[0]}</strong><br><small>${on?'Online':'Offline'}</small></div>`;
+                list.appendChild(div);
+            });
         }
 
-        function goBack() { showChatList(); }
-        function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
-        function startPrivateChatFromInput() {
-            const email = document.getElementById('newPrivateEmail').value.trim().toLowerCase();
-            if(email && email !== myEmail) openRoom('private', email);
+        function updateStatus() { 
+            const dot = document.getElementById('headerStatus'); 
+            dot.style.display = (mode==='global') ? 'none' : 'block';
+            dot.className = `status-dot ${onlineUsers[target]?'status-online':''}`;
         }
-        function handleTyping() {}
 
-        checkSession();
+        function goBack() { showList(); }
+        function startPrivate() { const e=document.getElementById('newChatEmail').value; if(e) openRoom('private', e); }
+        document.addEventListener('click', () => document.getElementById('actionMenu').style.display='none');
+        check();
     </script>
 </body>
 </html>
