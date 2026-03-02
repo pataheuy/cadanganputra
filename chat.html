@@ -3,146 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pufutara Chat - Fixed Edition</title>
+    <title>Pufutara Chat - Anti Error</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #e5ddd5; display: flex; justify-content: center; align-items: center; height: 100vh; }
         
+        /* CONTAINER TETAP 720px */
         .app-container { 
-            width: 100%; max-width: 720px; height: 75vh; 
-            background: #fff; border-radius: 12px; overflow: hidden; 
+            width: 100%; max-width: 720px; height: 85vh; 
+            background: #fff; border-radius: 10px; overflow: hidden; 
             display: flex; flex-direction: column; position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
         }
 
-        @media (max-width: 720px) { .app-container { max-width: 100%; height: 100vh; border-radius: 0; } }
-
-        /* Header */
-        .wa-header { background: #111; color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .wa-header h2 { font-size: 1rem; display: flex; align-items: center; gap: 8px; }
-        .status-dot { width: 10px; height: 10px; background: #bbb; border-radius: 50%; border: 2px solid #fff; }
-        .status-online { background: #34C759; box-shadow: 0 0 5px #34C759; }
-
-        /* Screens Management */
-        .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        .wa-header { background: #075e54; color: #fff; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; background: #fff; }
         .active { display: flex; }
 
-        /* Auth Screen */
-        .auth-screen { padding: 40px; justify-content: center; text-align: center; background: white; }
-        .auth-screen input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; }
-        .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn-primary { background: #111; color: #fff; margin-bottom: 10px; }
+        /* Auth */
+        .auth-screen { padding: 40px; text-align: center; }
+        .auth-screen input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn-main { width: 100%; padding: 12px; background: #25d366; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
 
         /* Chat List */
-        .chat-list-screen { background: #fff; overflow-y: auto; }
-        .chat-item { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; display: flex; align-items: center; gap: 12px; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #111; color: #fff; display: flex; justify-content: center; align-items: center; font-weight: bold; position: relative; }
+        .chat-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; align-items: center; gap: 15px; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: #075e54; color: white; display: flex; justify-content: center; align-items: center; font-weight: bold; }
 
         /* Chat Room */
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f4f4f4; }
-        .message { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; position: relative; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .msg-me { background: #111; color: #fff; align-self: flex-end; border-top-right-radius: 2px; }
-        .msg-other { background: #fff; color: #111; align-self: flex-start; border-top-left-radius: 2px; }
-        
-        .msg-quote { background: rgba(0,0,0,0.05); border-left: 3px solid #111; padding: 6px; margin-bottom: 6px; border-radius: 4px; font-size: 0.8rem; }
-        .msg-me .msg-quote { background: rgba(255,255,255,0.1); border-left-color: #fff; color: #ccc; }
-        .msg-footer { display: flex; justify-content: flex-end; align-items: center; gap: 4px; font-size: 0.65rem; margin-top: 5px; opacity: 0.7; }
-        .is-read { color: #3498db; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #e5ddd5; }
+        .msg { max-width: 80%; padding: 8px 12px; border-radius: 8px; position: relative; font-size: 0.95rem; }
+        .msg-me { background: #dcf8c6; align-self: flex-end; }
+        .msg-other { background: #fff; align-self: flex-start; }
+        .msg-time { font-size: 0.7rem; color: #888; text-align: right; margin-top: 4px; }
 
-        /* Actions */
-        .action-menu { position: absolute; background: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 100; border: 1px solid #eee; }
-        .action-menu button { padding: 12px 20px; border: none; background: none; text-align: left; cursor: pointer; }
-        .reply-banner { padding: 10px 20px; background: #e9e9e9; font-size: 0.85rem; display: none; justify-content: space-between; border-top: 1px solid #ccc; }
-        .chat-input-area { padding: 15px; background: #fff; display: flex; gap: 10px; border-top: 1px solid #eee; }
-        .chat-input-area input { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
-        .btn-send { background: #111; color: #fff; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; }
+        .input-area { padding: 10px; background: #f0f0f0; display: flex; gap: 10px; align-items: center; }
+        .input-area input { flex: 1; padding: 12px; border-radius: 20px; border: none; outline: none; }
+        .btn-send { background: #075e54; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="actionMenu" class="action-menu">
-        <button onclick="actionReply()">Balas ↩️</button>
-        <button id="btnDel" style="color:red" onclick="actionDelete()">Hapus 🗑️</button>
-    </div>
-
     <div class="app-container">
         <div class="wa-header">
-            <h2>
-                <button id="backBtn" onclick="goBack()" style="background:none; border:none; color:#fff; cursor:pointer; display:none; font-size:1.2rem; margin-right:10px;">❮</button>
-                <span id="headerTitle">Pufutara Chat</span>
-                <span id="headerStatus" class="status-dot"></span>
-            </h2>
-            <button id="logoutBtn" onclick="logout()" style="background:none; border:none; color:#fff; font-size:0.75rem; cursor:pointer; display:none;">Logout</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="backBtn" onclick="showList()" style="background:none; border:none; color:white; font-size: 1.2rem; cursor:pointer; display:none;">❮</button>
+                <h3 id="headerTitle">Pufutara Chat</h3>
+            </div>
+            <button id="logoutBtn" onclick="logout()" style="background:none; border:none; color:white; cursor:pointer; font-size: 0.8rem; display:none;">Logout</button>
         </div>
 
         <div id="authScreen" class="screen active auth-screen">
-            <h1 style="margin-bottom:20px">Selamat Datang</h1>
+            <h2 style="margin-bottom: 20px;">Masuk Pufutara</h2>
             <input type="email" id="emailIn" placeholder="Email">
             <input type="password" id="passIn" placeholder="Password">
-            <button class="btn btn-primary" onclick="login()">Login</button>
-            <button class="btn" style="background:#eee" onclick="register()">Daftar Akun Baru</button>
-            <p id="authErr" style="color:red; font-size:0.8rem; margin-top:15px;"></p>
+            <button class="btn-main" onclick="login()">Login / Masuk</button>
+            <p id="authErr" style="color:red; font-size:0.8rem;"></p>
         </div>
 
-        <div id="chatListScreen" class="screen chat-list-screen">
-            <div style="padding:15px; display:flex; gap:8px; background:#f9f9f9;">
-                <input type="email" id="newChatEmail" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;" placeholder="Email teman...">
-                <button class="btn btn-primary" style="margin:0" onclick="startPrivateChat()">Chat</button>
+        <div id="listScreen" class="screen">
+            <div style="padding: 10px; display: flex; gap: 5px;">
+                <input type="email" id="targetEmail" style="flex:1; padding:8px;" placeholder="Email teman...">
+                <button onclick="openChat('private', document.getElementById('targetEmail').value)" style="padding:0 10px; background:#075e54; color:white; border:none;">Chat</button>
             </div>
-            <div class="chat-item" onclick="openRoom('global')">
-                <div class="avatar">🌍</div>
-                <div><strong>Grup Global</strong><br><small>Public Chat</small></div>
+            <div class="chat-item" onclick="openChat('global')">
+                <div class="avatar">G</div>
+                <div><strong>Grup Global</strong><br><small>Semua orang</small></div>
             </div>
             <div id="privateList"></div>
         </div>
 
-        <div id="chatRoomScreen" class="screen">
+        <div id="roomScreen" class="screen">
             <div id="chatMessages" class="chat-messages"></div>
-            <div id="replyBanner" class="reply-banner">
-                <div id="replyTxt"></div>
-                <div onclick="cancelReply()" style="cursor:pointer; font-weight:bold">✕</div>
-            </div>
-            <div class="chat-input-area">
-                <input type="text" id="msgIn" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter')send()">
-                <button class="btn-send" onclick="send()">➤</button>
+            <div class="input-area">
+                <input type="text" id="msgIn" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter')sendMsg()">
+                <button class="btn-send" onclick="sendMsg()">➤</button>
             </div>
         </div>
     </div>
 
     <script>
-        const SUP_URL = 'https://puywjdopumlzvmzbcudr.supabase.co';
-        const SUP_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eXdqZG9wdW1senZtemJjdWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDE3MTksImV4cCI6MjA4NzkxNzcxOX0.vvThyjtK2SlA9oA9Mr_XOmt1R_tNZk-ib3PO9XpiiSc';
+        const SB_URL = 'https://puywjdopumlzvmzbcudr.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eXdqZG9wdW1senZtemJjdWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDE3MTksImV4cCI6MjA4NzkxNzcxOX0.vvThyjtK2SlA9oA9Mr_XOmt1R_tNZk-ib3PO9XpiiSc';
         
-        // Ganti nama variabel agar tidak bentrok dengan library
-        const sbClient = window.supabase.createClient(SUP_URL, SUP_KEY);
+        // Pakai nama sbClient agar tidak bentrok
+        const sbClient = window.supabase.createClient(SB_URL, SB_KEY);
 
-        let currentUser = null, myEmail = '', mode = 'list', target = '', currentTable = 'global_chat';
-        let channel = null, onlineUsers = {}, selectedMsg = null, replyingTo = null;
+        let myUser = null, curMode = 'list', curTarget = '', curTable = 'global_chat';
+
+        async function login() {
+            const e = document.getElementById('emailIn').value, p = document.getElementById('passIn').value;
+            const { data, error } = await sbClient.auth.signInWithPassword({ email: e, password: p });
+            if (error) {
+                const { error: signUpErr } = await sbClient.auth.signUp({ email: e, password: p });
+                if(signUpErr) document.getElementById('authErr').innerText = signUpErr.message;
+            } else {
+                myUser = data.user;
+                startApp();
+            }
+        }
 
         async function checkSession() {
             const { data: { session } } = await sbClient.auth.getSession();
-            if (session) handleUserIn(session.user);
+            if (session) { myUser = session.user; startApp(); }
         }
 
-        async function login() {
-            const email = document.getElementById('emailIn').value;
-            const password = document.getElementById('passIn').value;
-            const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
-            if (error) document.getElementById('authErr').innerText = error.message;
-            else handleUserIn(data.user);
-        }
-
-        async function register() {
-            const email = document.getElementById('emailIn').value;
-            const password = document.getElementById('passIn').value;
-            const { error } = await sbClient.auth.signUp({ email, password });
-            if (error) document.getElementById('authErr').innerText = error.message;
-            else alert("Cek email atau silakan coba login.");
-        }
-
-        function handleUserIn(user) {
-            currentUser = user; myEmail = user.email;
+        function startApp() {
             document.getElementById('logoutBtn').style.display = 'block';
             showList();
             setupRealtime();
@@ -151,22 +117,24 @@
         function logout() { sbClient.auth.signOut(); location.reload(); }
 
         function showList() {
-            mode = 'list'; switchScreen('chatListScreen');
+            curMode = 'list';
+            switchScreen('listScreen');
             document.getElementById('backBtn').style.display = 'none';
-            document.getElementById('headerStatus').style.display = 'none';
             document.getElementById('headerTitle').innerText = 'Pufutara Chat';
-            loadList();
+            loadPrivateList();
         }
 
-        async function openRoom(m, t = '') {
-            mode = m; target = t; currentTable = (m === 'global') ? 'global_chat' : 'private_chat';
-            switchScreen('chatRoomScreen');
-            document.getElementById('backBtn').style.display = 'inline-block';
-            document.getElementById('headerTitle').innerText = m === 'global' ? '🌍 Global Group' : t.split('@')[0];
-            updateOnlineUI();
+        async function openChat(mode, target = '') {
+            if(mode === 'private' && !target) return;
+            curMode = mode; curTarget = target;
+            curTable = (mode === 'global') ? 'global_chat' : 'private_chat';
+            
+            switchScreen('roomScreen');
+            document.getElementById('backBtn').style.display = 'block';
+            document.getElementById('headerTitle').innerText = mode === 'global' ? 'Grup Global' : target.split('@')[0];
+            
             document.getElementById('chatMessages').innerHTML = '';
-            await loadMessages();
-            if(m === 'private') markAsRead();
+            loadMsgs();
         }
 
         function switchScreen(id) {
@@ -174,123 +142,72 @@
             document.getElementById(id).classList.add('active');
         }
 
-        async function loadMessages() {
-            let q = sbClient.from(currentTable).select('*').order('created_at', { ascending: false }).limit(50);
-            if(mode === 'private') q = q.or(`and(sender.eq.${myEmail},receiver.eq.${target}),and(sender.eq.${target},receiver.eq.${myEmail})`);
+        async function loadMsgs() {
+            let q = sbClient.from(curTable).select('*').order('created_at', { ascending: false }).limit(50);
+            if(curMode === 'private') {
+                q = q.or(`and(sender.eq.${myUser.email},receiver.eq.${curTarget}),and(sender.eq.${curTarget},receiver.eq.${myUser.email})`);
+            }
             const { data } = await q;
-            if (data) data.reverse().forEach(m => renderMessage(m));
+            if(data) data.reverse().forEach(m => render(m));
         }
 
-        async function send() {
+        async function sendMsg() {
             const inp = document.getElementById('msgIn'), txt = inp.value.trim();
-            if (!txt) return; inp.value = '';
-            let finalMessage = replyingTo ? `|RPLY|${replyingTo.sender}|${replyingTo.text}|${txt}` : txt;
-            const pld = { sender: myEmail, message: finalMessage, is_read: false };
-            if(mode === 'private') pld.receiver = target;
-            await sbClient.from(currentTable).insert([pld]);
-            cancelReply();
+            if(!txt) return;
+            inp.value = '';
+
+            // PAYLOAD SESUAI TABEL (Hanya kolom yang ada di screenshot database kamu)
+            const payload = { sender: myUser.email, message: txt };
+            if(curMode === 'private') payload.receiver = curTarget;
+
+            const { error } = await sbClient.from(curTable).insert([payload]);
+            if(error) console.error("Error kirim:", error.message);
         }
 
-        function renderMessage(m) {
-            if (document.getElementById(`msg-${m.id}`)) {
-                const ck = document.getElementById(`ck-${m.id}`);
-                if(m.is_read && ck) ck.classList.add('is-read');
-                return;
-            }
+        function render(m) {
             const box = document.getElementById('chatMessages');
-            const isMe = m.sender === myEmail;
+            const isMe = m.sender === myUser.email;
             const div = document.createElement('div');
-            div.id = `msg-${m.id}`; div.className = `message ${isMe ? 'msg-me' : 'msg-other'}`;
+            div.className = `msg ${isMe ? 'msg-me' : 'msg-other'}`;
             
-            let displayTxt = m.message, quoteHtml = '';
-            if (displayTxt.startsWith('|RPLY|')) {
-                const parts = displayTxt.split('|');
-                quoteHtml = `<div class="msg-quote"><strong>${parts[2].split('@')[0]}</strong><br>${parts[3]}</div>`;
-                displayTxt = parts.slice(4).join('|');
-            }
-
-            const time = new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            const checks = (isMe && mode === 'private') ? `<span id="ck-${m.id}" class="check-mark ${m.is_read?'is-read':''}">✓✓</span>` : '';
+            const time = new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             
-            div.innerHTML = `${quoteHtml}<div>${displayTxt}</div><div class="msg-footer">${time} ${checks}</div>`;
-            div.onclick = (e) => {
-                e.stopPropagation();
-                selectedMsg = { id: m.id, sender: m.sender, text: displayTxt, isMe };
-                const menu = document.getElementById('actionMenu');
-                menu.style.display = 'flex';
-                menu.style.left = Math.min(e.pageX, window.innerWidth - 150) + 'px';
-                menu.style.top = Math.min(e.pageY, window.innerHeight - 100) + 'px';
-                document.getElementById('btnDel').style.display = isMe ? 'block' : 'none';
-            };
-            box.appendChild(div); box.scrollTop = box.scrollHeight;
-        }
-
-        function actionReply() {
-            replyingTo = selectedMsg;
-            document.getElementById('replyBanner').style.display = 'flex';
-            document.getElementById('replyTxt').innerText = `Balas ${selectedMsg.sender.split('@')[0]}: ${selectedMsg.text}`;
-            document.getElementById('msgIn').focus();
-        }
-        function cancelReply() { replyingTo = null; document.getElementById('replyBanner').style.display = 'none'; }
-        async function actionDelete() {
-            if(confirm("Hapus pesan ini?")) await sbClient.from(currentTable).delete().eq('id', selectedMsg.id);
-        }
-        function markAsRead() {
-            sbClient.from('private_chat').update({ is_read: true }).eq('sender', target).eq('receiver', myEmail).eq('is_read', false).then(()=>{});
+            div.innerHTML = `
+                <div style="font-size:0.7rem; font-weight:bold; color:#075e54">${isMe ? 'Saya' : m.sender.split('@')[0]}</div>
+                <div>${m.message}</div>
+                <div class="msg-time">${time}</div>
+            `;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
         }
 
         function setupRealtime() {
-            channel = sbClient.channel('pufutara_final', { config: { presence: { key: myEmail } } });
-            channel.on('presence', { event: 'sync' }, () => {
-                onlineUsers = {}; const state = channel.presenceState();
-                for (const k in state) onlineUsers[k] = true;
-                updateOnlineUI(); if(mode === 'list') loadList();
+            sbClient.channel('pufutara_room')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, p => {
+                if(curMode === 'global') render(p.new);
             })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'global_chat' }, p => { if(currentTable==='global_chat') handleRealtime(p); })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'private_chat' }, p => { if(currentTable==='private_chat') handleRealtime(p); })
-            .subscribe(async (status) => { if(status === 'SUBSCRIBED') await channel.track({ online_at: new Date() }); });
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'private_chat' }, p => {
+                if(curMode === 'private' && (p.new.sender === curTarget || p.new.sender === myUser.email)) render(p.new);
+            })
+            .subscribe();
         }
 
-        function handleRealtime(p) {
-            if(p.eventType === 'INSERT') {
-                renderMessage(p.new);
-                if(mode === 'private' && p.new.sender === target) markAsRead();
-            } else if(p.eventType === 'UPDATE') {
-                const ck = document.getElementById(`ck-${p.new.id}`);
-                if(ck && p.new.is_read) ck.classList.add('is-read');
-            } else if(p.eventType === 'DELETE') {
-                document.getElementById(`msg-${p.old.id}`)?.remove();
-            }
-        }
-
-        async function loadList() {
-            const { data } = await sbClient.from('private_chat').select('sender, receiver').or(`sender.eq.${myEmail},receiver.eq.${myEmail}`);
-            const contacts = new Set();
-            if(data) data.forEach(d => contacts.add(d.sender === myEmail ? d.receiver : d.sender));
-            const listDiv = document.getElementById('privateList'); listDiv.innerHTML = '';
-            contacts.forEach(c => {
-                const isOnline = onlineUsers[c];
-                const item = document.createElement('div'); item.className = 'chat-item';
-                item.onclick = () => openRoom('private', c);
-                item.innerHTML = `<div class="avatar">${c[0].toUpperCase()}<span class="status-dot ${isOnline?'status-online':''}" style="position:absolute;bottom:0;right:0;border-width:1px"></span></div>
-                                  <div><strong>${c.split('@')[0]}</strong><br><small style="color:${isOnline?'#34C759':'#888'}">${isOnline?'Online':'Offline'}</small></div>`;
+        async function loadPrivateList() {
+            const { data } = await sbClient.from('private_chat').select('sender, receiver').or(`sender.eq.${myUser.email},receiver.eq.${myUser.email}`);
+            const users = new Set();
+            if(data) data.forEach(d => users.add(d.sender === myUser.email ? d.receiver : d.sender));
+            
+            const listDiv = document.getElementById('privateList');
+            listDiv.innerHTML = '';
+            users.forEach(u => {
+                const item = document.createElement('div');
+                item.className = 'chat-item';
+                item.onclick = () => openChat('private', u);
+                item.innerHTML = `<div class="avatar">${u[0].toUpperCase()}</div><div><strong>${u.split('@')[0]}</strong></div>`;
                 listDiv.appendChild(item);
             });
         }
 
-        function updateOnlineUI() {
-            const dot = document.getElementById('headerStatus');
-            if(mode === 'global') dot.style.display = 'none';
-            else { dot.style.display = 'inline-block'; dot.className = `status-dot ${onlineUsers[target] ? 'status-online' : ''}`; }
-        }
-
-        function goBack() { showList(); }
-        function startPrivateChat() {
-            const email = document.getElementById('newChatEmail').value.trim();
-            if(email && email !== myEmail) openRoom('private', email);
-        }
-
-        document.addEventListener('click', () => { document.getElementById('actionMenu').style.display = 'none'; });
         checkSession();
     </script>
 </body>
