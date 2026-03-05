@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PufutaraAnimalRunner</title>
+    <title>Chicken Run V17 - Balok Terbang</title>
     <style>
         body {
             margin: 0; padding: 0; background-color: #222; display: flex;
@@ -94,6 +94,7 @@
         let speed = 6;
         let frameCount = 0;
         let selectedPlayerCount = 2;
+        let deathTimer; // Variabel buat nyimpen timer 10 detik lagu
         
         let isKingMode = false;
         let kingId = null;
@@ -173,6 +174,11 @@
 
             isPlaying = true;
             
+            // --- RESET LAGU KEMATIAN JIKA MASIH JALAN ---
+            clearTimeout(deathTimer);
+            deathSound.pause();
+            deathSound.currentTime = 0;
+            
             bgMusic.currentTime = 0;
             bgMusic.play().catch(e => console.log("Lagu diblokir browser, klik layar dulu untuk memulai audio"));
 
@@ -188,13 +194,32 @@
             menuScreen.style.display = 'flex';
             nameScreen.style.display = 'none';
             titleText.innerText = winnerMsg;
+            
+            // --- MAINKAN LAGU KEMATIAN SAAT GAME OVER (10 DETIK) ---
+            deathSound.currentTime = 0;
+            deathSound.play().catch(e => console.log("SFX Mati diblokir"));
+            
+            clearTimeout(deathTimer);
+            deathTimer = setTimeout(() => {
+                deathSound.pause();
+                deathSound.currentTime = 0;
+            }, 10000); // 10000 milidetik = 10 detik
         }
 
         function killPlayer(p) {
             if (p.alive) {
                 p.alive = false;
+                
+                // Nyalain lagu mati pas ada yang gugur
                 deathSound.currentTime = 0; 
                 deathSound.play().catch(e => console.log("SFX Mati diblokir"));
+                
+                // Pastikan lagu cuma jalan 10 detik meski ada player mati
+                clearTimeout(deathTimer);
+                deathTimer = setTimeout(() => {
+                    deathSound.pause();
+                    deathSound.currentTime = 0;
+                }, 10000);
             }
         }
 
@@ -246,7 +271,16 @@
             }
         }
 
-        function getBoxType() { return Math.random() > 0.5 ? 'box' : 'blocker'; }
+        function createBox(x, targetY, w, h) {
+            let type = Math.random() > 0.5 ? 'box' : 'blocker';
+            let startY = targetY;
+            
+            if (type === 'blocker') {
+                startY = targetY >= 180 ? 450 : -50; 
+            }
+            
+            return { type: type, x: x, y: startY, targetY: targetY, w: w, h: h, color: '#F44336' };
+        }
 
         function spawnObstacle() {
             let spawnRate = Math.max(40, 90 - Math.floor(speed * 3)); 
@@ -260,17 +294,18 @@
                 let startX = canvas.width;
 
                 if (pattern === 0) {
-                    let isTop = Math.random() > 0.5; obstacles.push({ type: getBoxType(), x: startX, y: isTop ? 40 : 320, w: 40, h: 40, color: '#F44336' });
+                    let isTop = Math.random() > 0.5; 
+                    obstacles.push(createBox(startX, isTop ? 40 : 320, 40, 40));
                 } 
                 else if (pattern === 1) obstacles.push({ type: 'moving', x: startX, y: 150, w: 30, h: 60, color: '#00BCD4', dy: 3 });
                 else if (pattern === 2) obstacles.push({ type: 'gear', x: startX, y: 180, w: 40, h: 40, angle: 0 });
                 else if (pattern === 3) {
                     obstacles.push({ type: 'platform', x: startX, y: 191, w: 250, h: 25 });
-                    obstacles.push({ type: getBoxType(), x: startX + 100, y: 191 - 30, w: 30, h: 30, color: '#F44336' });
+                    obstacles.push(createBox(startX + 100, 191 - 30, 30, 30));
                 }
                 else if (pattern === 4) {
-                    obstacles.push({ type: getBoxType(), x: startX, y: 40, w: 30, h: 60, color: '#F44336' }); 
-                    obstacles.push({ type: getBoxType(), x: startX + 150, y: 300, w: 30, h: 60, color: '#F44336' });
+                    obstacles.push(createBox(startX, 40, 30, 60)); 
+                    obstacles.push(createBox(startX + 150, 300, 30, 60));
                 }
                 else if (pattern === 5) {
                     let isTopHole = Math.random() > 0.5; let holeSize = 150 + Math.random() * 100; 
@@ -341,6 +376,17 @@
                         ctx.strokeStyle = "black"; ctx.lineWidth = 2; ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
                     } 
                     else if (obs.type === 'blocker') {
+                        if (obs.y !== obs.targetY) {
+                            obs.y += (obs.targetY - obs.y) * 0.15; 
+                            if (Math.abs(obs.targetY - obs.y) < 2) {
+                                obs.y = obs.targetY; 
+                            }
+                            
+                            ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+                            let lineY = obs.targetY > obs.y ? obs.y - 30 : obs.y + obs.h;
+                            ctx.fillRect(obs.x + 10, lineY, obs.w - 20, 30);
+                        }
+
                         ctx.fillStyle = map.ground; ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
                         ctx.strokeStyle = map.floor; ctx.lineWidth = 3; 
                         ctx.strokeRect(obs.x + 2, obs.y + 2, obs.w - 4, obs.h - 4); 
@@ -428,8 +474,8 @@
                             if (p.y + 30 - hitBox > obs.y && p.y + hitBox < obs.y + obs.h) {
                                 if (p.x + 30 > obs.x && p.x < obs.x + obs.w) {
                                     if (!p.invincible) {
-                                        p.x = obs.x - 30; // Kedorong balok
-                                        p.isBlocked = true; // Tandai bahwa pemain lagi nempel balok
+                                        p.x = obs.x - 30; 
+                                        p.isBlocked = true; 
                                     }
                                 }
                             }
@@ -456,16 +502,12 @@
                         if (!overHoleTop && p.y < 40) p.y = 40;     
                     }
 
-                    // --- BAGIAN MENGGAMBAR PEMAIN (DENGAN ANIMASI HIT) ---
                     let drawX = p.x;
                     let drawY = p.y;
 
-                    // Kalau lagi nyangkut/nempel balok, kasih animasi getar
                     if (p.isBlocked) {
-                        drawX += (Math.random() * 6 - 3); // Getar kiri-kanan
-                        drawY += (Math.random() * 6 - 3); // Getar atas-bawah
-                        
-                        // Gambar efek ledakan pas di titik tabrakan
+                        drawX += (Math.random() * 6 - 3); 
+                        drawY += (Math.random() * 6 - 3); 
                         ctx.font = "20px Arial";
                         ctx.fillText("💥", p.x + 25, p.y + 20);
                     }
@@ -481,7 +523,6 @@
                     ctx.strokeStyle = "black"; ctx.strokeText(p.name, drawX + 15, drawY + 50);
                     ctx.fillStyle = "white"; ctx.fillText(p.name, drawX + 15, drawY + 50); 
                     ctx.textAlign = "left"; 
-                    // -----------------------------------------------------
 
                     if (p.y > 400 || p.y < -30 || p.x < -30) killPlayer(p);
 
@@ -500,7 +541,6 @@
                 }
             });
 
-            // Sistem Formasi
             let sortedAlivePlayers = [...activePlayers].filter(p => p.alive).sort((a, b) => b.x - a.x);
             
             sortedAlivePlayers.forEach((p, index) => {
@@ -516,6 +556,17 @@
                     }
                 }
             });
+
+            // --- BAGIAN MENGGAMBAR SCORE DI TENGAH ATAS ---
+            let score = Math.floor(frameCount / 10);
+            ctx.fillStyle = "white";
+            ctx.font = "bold 26px 'Comic Sans MS', cursive";
+            ctx.textAlign = "center";
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 4;
+            ctx.strokeText("Score: " + score, canvas.width / 2, 70); // Posisi Y = 70 (tengah atas)
+            ctx.fillText("Score: " + score, canvas.width / 2, 70);
+            ctx.textAlign = "left"; // Reset ke kiri lagi buat nge-render teks yang lain
 
             if (aliveCount === 1 && activePlayers.length > 1) {
                 let winMsg = (isKingMode && lastAlive.id === kingId) ? `${lastAlive.name} Menang Sbg RAJA! 👑` : `${lastAlive.name} Menang! 🏆`;
