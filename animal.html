@@ -11,6 +11,16 @@
             font-family: 'Comic Sans MS', cursive, sans-serif;
             overflow: hidden;
         }
+        
+        /* Style baru untuk Score di luar box */
+        #scoreBoard {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 5px #000;
+        }
+
         #gameContainer {
             position: relative; box-shadow: 0 10px 40px rgba(0,0,0,1);
             border-radius: 10px; overflow: hidden; border: 5px solid #555;
@@ -47,6 +57,8 @@
 
     <audio id="bgMusic" src="youtube_24018.mp3" loop></audio>
     <audio id="deathSound" src="tamatlah-sudah.mp3"></audio>
+
+    <div id="scoreBoard">Score: 0</div>
 
     <div id="gameContainer">
         <canvas id="gameCanvas" width="800" height="400"></canvas>
@@ -85,6 +97,7 @@
         const titleText = document.getElementById('titleText');
         const modeBtn = document.getElementById('modeBtn');
         const nameInputsDiv = document.getElementById('nameInputs');
+        const scoreBoard = document.getElementById('scoreBoard'); // Ambil elemen score
         
         const bgMusic = document.getElementById('bgMusic'); 
         const deathSound = document.getElementById('deathSound'); 
@@ -94,7 +107,7 @@
         let speed = 6;
         let frameCount = 0;
         let selectedPlayerCount = 2;
-        let deathTimer; // Variabel buat nyimpen timer 10 detik lagu
+        let deathTimer; 
         
         let isKingMode = false;
         let kingId = null;
@@ -167,6 +180,7 @@
             initEnvironment(); 
             currentMapIndex = 0; 
             nightAlpha = 0; speed = 6.5; frameCount = 0;
+            scoreBoard.innerText = "Score: 0"; // Reset text score di luar game
             
             if (isKingMode) kingId = activePlayers[Math.floor(Math.random() * activePlayers.length)].id;
             else kingId = null;
@@ -174,7 +188,6 @@
 
             isPlaying = true;
             
-            // --- RESET LAGU KEMATIAN JIKA MASIH JALAN ---
             clearTimeout(deathTimer);
             deathSound.pause();
             deathSound.currentTime = 0;
@@ -195,7 +208,6 @@
             nameScreen.style.display = 'none';
             titleText.innerText = winnerMsg;
             
-            // --- MAINKAN LAGU KEMATIAN SAAT GAME OVER (10 DETIK) ---
             deathSound.currentTime = 0;
             deathSound.play().catch(e => console.log("SFX Mati diblokir"));
             
@@ -203,23 +215,21 @@
             deathTimer = setTimeout(() => {
                 deathSound.pause();
                 deathSound.currentTime = 0;
-            }, 10000); // 10000 milidetik = 10 detik
+            }, 7000); // Diubah jadi 7 detik
         }
 
         function killPlayer(p) {
             if (p.alive) {
                 p.alive = false;
                 
-                // Nyalain lagu mati pas ada yang gugur
                 deathSound.currentTime = 0; 
                 deathSound.play().catch(e => console.log("SFX Mati diblokir"));
                 
-                // Pastikan lagu cuma jalan 10 detik meski ada player mati
                 clearTimeout(deathTimer);
                 deathTimer = setTimeout(() => {
                     deathSound.pause();
                     deathSound.currentTime = 0;
-                }, 10000);
+                }, 7000); // Diubah jadi 7 detik
             }
         }
 
@@ -283,6 +293,9 @@
         }
 
         function spawnObstacle() {
+            // MASA AMAN 3 DETIK (Asumsi ~60 FPS, jadi 180 frame)
+            if (frameCount < 180) return; 
+
             let spawnRate = Math.max(40, 90 - Math.floor(speed * 3)); 
             if (frameCount % spawnRate === 0) {
                 if (isKingMode && Math.random() < 0.25) {
@@ -557,16 +570,9 @@
                 }
             });
 
-            // --- BAGIAN MENGGAMBAR SCORE DI TENGAH ATAS ---
+            // Update DOM Score di luar canvas
             let score = Math.floor(frameCount / 10);
-            ctx.fillStyle = "white";
-            ctx.font = "bold 26px 'Comic Sans MS', cursive";
-            ctx.textAlign = "center";
-            ctx.strokeStyle = "black";
-            ctx.lineWidth = 4;
-            ctx.strokeText("Score: " + score, canvas.width / 2, 70); // Posisi Y = 70 (tengah atas)
-            ctx.fillText("Score: " + score, canvas.width / 2, 70);
-            ctx.textAlign = "left"; // Reset ke kiri lagi buat nge-render teks yang lain
+            scoreBoard.innerText = "Score: " + score;
 
             if (aliveCount === 1 && activePlayers.length > 1) {
                 let winMsg = (isKingMode && lastAlive.id === kingId) ? `${lastAlive.name} Menang Sbg RAJA! 👑` : `${lastAlive.name} Menang! 🏆`;
