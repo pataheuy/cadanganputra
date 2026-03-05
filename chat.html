@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pufutara Chat - Fitur Lengkap + Gambar</title>
+    <title>Pufutara Chat - Pro Storage</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
@@ -34,7 +34,7 @@
         .msg-other { background: #eee; color: #000; align-self: flex-start; border-bottom-left-radius: 2px; }
         
         /* Image Upload Styles */
-        .msg img { max-width: 100%; border-radius: 8px; margin-top: 5px; display: block; }
+        .msg img { max-width: 100%; max-height: 300px; border-radius: 8px; margin-top: 5px; display: block; object-fit: cover; border: 1px solid rgba(0,0,0,0.1); }
         
         /* Quote / Reply Style */
         .msg-quote { background: rgba(0,0,0,0.05); border-left: 3px solid #111; padding: 6px 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.8rem; }
@@ -44,7 +44,7 @@
         .reply-banner { padding: 10px 15px; background: #e5e5e5; font-size: 0.85rem; display: none; justify-content: space-between; align-items: center; border-top: 1px solid #ccc; }
         .input-area { padding: 10px 15px; display: flex; gap: 8px; border-top: 1px solid #eee; background: #fff; align-items: center; }
         .input-area input[type="text"] { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
-        .btn-icon { background: #555; color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; }
+        .btn-icon { background: #555; color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; transition: 0.3s; }
         .btn-send { background: #111; color: #fff; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; justify-content: center; align-items: center;}
 
         /* Action Menu (Popup) */
@@ -86,8 +86,8 @@
             </div>
 
             <div class="input-area">
-                <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="uploadImage()">
-                <button class="btn-icon" onclick="document.getElementById('imgUpload').click()" title="Kirim Gambar">📷</button>
+                <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="handleImageUpload()">
+                <button id="btnImg" class="btn-icon" onclick="document.getElementById('imgUpload').click()" title="Kirim Gambar">📷</button>
                 
                 <input type="text" id="msgIn" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter')sendMessage()">
                 <button class="btn-send" onclick="sendMessage()">➤</button>
@@ -106,7 +106,7 @@
         let selectedMsg = null;
         let replyingTo = null;
 
-        // --- AUTHENTICATION ---
+        // --- AUTH ---
         async function handleAuth() {
             const email = document.getElementById('emailIn').value;
             const password = document.getElementById('passIn').value;
@@ -125,19 +125,13 @@
             }
         }
 
-        async function logout() { 
-            await _client.auth.signOut(); 
-            location.reload(); 
-        }
+        async function logout() { await _client.auth.signOut(); location.reload(); }
 
         function enterChat() {
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('chatScreen').style.display = 'flex';
             document.getElementById('logoutBtn').style.display = 'block';
             
-            document.getElementById('headerTitle').innerText = "Grup Global";
-            
-            // TAMPILKAN NAMA USER DI HEADER
             const namaUser = _userEmail.split('@')[0];
             const subtitleEl = document.getElementById('userSubtitle');
             subtitleEl.innerText = `Masuk sebagai: ${namaUser}`;
@@ -147,7 +141,7 @@
             listenRealtime();
         }
 
-        // --- CORE CHAT FUNCTIONS ---
+        // --- CORE CHAT ---
         async function loadMessages() {
             const { data } = await _client.from('global_chat')
                 .select('id, sender, message')
@@ -175,29 +169,56 @@
             await _client.from('global_chat').insert([{ sender: _userEmail, message: finalMessage }]);
         }
 
-        // --- UPLOAD GAMBAR (BASE64 TRICK) ---
-        function uploadImage() {
+        // --- UPLOAD GAMBAR VIA STORAGE ---
+        async function handleImageUpload() {
             const fileInput = document.getElementById('imgUpload');
             const file = fileInput.files[0];
             if (!file) return;
 
-            // Batasi ukuran gambar maks 2MB supaya database gak keberatan
-            if (file.size > 2 * 1024 * 1024) {
-                alert("Wah, gambarnya kegedean Bang! Maksimal 2MB ya biar aplikasinya tetap ngebut.");
+            // Batasi ukuran gambar (contoh: 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Ukuran gambar maksimal 5MB ya!");
                 fileInput.value = '';
                 return;
             }
 
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const base64Img = e.target.result;
-                // Kita kasih kode |IMG| di depan teksnya biar sistem tahu ini gambar
-                const payload = `|IMG|${base64Img}`;
-                
+            const btnImg = document.getElementById('btnImg');
+            btnImg.innerText = "⏳"; // Ubah icon jadi loading
+            btnImg.disabled = true;
+
+            try {
+                // 1. Bikin nama file unik pakai timestamp
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                const filePath = `public/${fileName}`;
+
+                // 2. Upload file ke Storage Bucket 'chat_images'
+                const { error: uploadError } = await _client.storage
+                    .from('chat_images')
+                    .upload(filePath, file);
+
+                if (uploadError) throw uploadError;
+
+                // 3. Ambil URL Publiknya
+                const { data: publicUrlData } = _client.storage
+                    .from('chat_images')
+                    .getPublicUrl(filePath);
+
+                const imgUrl = publicUrlData.publicUrl;
+
+                // 4. Kirim URL-nya ke tabel chat (pakai penanda |URLIMG|)
+                const payload = `|URLIMG|${imgUrl}`;
                 await _client.from('global_chat').insert([{ sender: _userEmail, message: payload }]);
-                fileInput.value = ''; // Reset input
-            };
-            reader.readAsDataURL(file);
+
+            } catch (err) {
+                console.error("Error upload:", err);
+                alert("Gagal kirim gambar. Pastikan bucket 'chat_images' sudah dibuat dan public!");
+            } finally {
+                // Kembalikan tombol seperti semula
+                btnImg.innerText = "📷";
+                btnImg.disabled = false;
+                fileInput.value = ''; 
+            }
         }
 
         function renderMessage(m) {
@@ -212,13 +233,14 @@
 
             let displayTxt = m.message;
             let quoteHtml = '';
-            let rawTextForReply = m.message; // Menyimpan teks murni kalau mau di-reply
+            let rawTextForReply = m.message; 
 
-            // CEK KALAU PESAN INI ADALAH GAMBAR
-            if (displayTxt.startsWith('|IMG|')) {
-                const base64Data = displayTxt.replace('|IMG|', '');
-                displayTxt = `<img src="${base64Data}" alt="Pufutara Image">`;
-                rawTextForReply = "[Gambar]"; // Kalau di-reply, tulisan yang muncul "[Gambar]"
+            // CEK KALAU PESAN INI ADALAH GAMBAR (DARI STORAGE)
+            if (displayTxt.startsWith('|URLIMG|')) {
+                const imgUrl = displayTxt.replace('|URLIMG|', '');
+                // Klik gambar untuk buka di tab baru (biar bisa di-zoom)
+                displayTxt = `<img src="${imgUrl}" alt="Gambar" onclick="window.open('${imgUrl}', '_blank')">`;
+                rawTextForReply = "[Gambar]"; 
             }
             // CEK KALAU PESAN INI BALASAN
             else if (displayTxt.startsWith('|RPLY|')) {
@@ -234,7 +256,6 @@
 
             div.innerHTML = `${quoteHtml}<b style="font-size: 0.7rem; color: ${isMe ? '#a5d6a7' : '#075e54'};">${m.sender.split('@')[0]}</b><br>${displayTxt}`;
             
-            // ACTION MENU (KLIK PESAN)
             div.onclick = (e) => {
                 e.stopPropagation();
                 selectedMsg = { id: m.id, sender: m.sender, text: rawTextForReply, isMe };
@@ -251,7 +272,6 @@
             box.scrollTop = box.scrollHeight; 
         }
 
-        // --- ACTIONS ---
         function actionReply() {
             replyingTo = selectedMsg;
             document.getElementById('replyBanner').style.display = 'flex';
@@ -270,7 +290,6 @@
 
         document.addEventListener('click', () => { document.getElementById('actionMenu').style.display = 'none'; });
 
-        // --- REALTIME UPDATES ---
         function listenRealtime() {
             _client.channel('public_chat')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'global_chat' }, payload => {
