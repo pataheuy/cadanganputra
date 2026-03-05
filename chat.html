@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pufutara Chat - Fitur Lengkap</title>
+    <title>Pufutara Chat - Fitur Lengkap + Gambar</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
@@ -28,10 +28,13 @@
 
         /* Chat Area */
         .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f9f9f9; }
-        .msg { max-width: 80%; padding: 10px 14px; border-radius: 10px; font-size: 0.9rem; position: relative; line-height: 1.4; cursor: pointer; transition: 0.2s; }
+        .msg { max-width: 80%; padding: 10px 14px; border-radius: 10px; font-size: 0.9rem; position: relative; line-height: 1.4; cursor: pointer; transition: 0.2s; word-wrap: break-word; }
         .msg:hover { opacity: 0.9; }
         .msg-me { background: #111; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg-other { background: #eee; color: #000; align-self: flex-start; border-bottom-left-radius: 2px; }
+        
+        /* Image Upload Styles */
+        .msg img { max-width: 100%; border-radius: 8px; margin-top: 5px; display: block; }
         
         /* Quote / Reply Style */
         .msg-quote { background: rgba(0,0,0,0.05); border-left: 3px solid #111; padding: 6px 10px; margin-bottom: 8px; border-radius: 4px; font-size: 0.8rem; }
@@ -39,9 +42,10 @@
 
         /* Input Area & Banners */
         .reply-banner { padding: 10px 15px; background: #e5e5e5; font-size: 0.85rem; display: none; justify-content: space-between; align-items: center; border-top: 1px solid #ccc; }
-        .input-area { padding: 15px; display: flex; gap: 10px; border-top: 1px solid #eee; background: #fff; }
-        .input-area input { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
-        .btn-send { background: #111; color: #fff; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; }
+        .input-area { padding: 10px 15px; display: flex; gap: 8px; border-top: 1px solid #eee; background: #fff; align-items: center; }
+        .input-area input[type="text"] { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; }
+        .btn-icon { background: #555; color: #fff; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; }
+        .btn-send { background: #111; color: #fff; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; justify-content: center; align-items: center;}
 
         /* Action Menu (Popup) */
         .action-menu { position: absolute; background: #fff; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 100; border: 1px solid #eee; overflow: hidden; width: 120px; }
@@ -52,14 +56,17 @@
 <body>
 
     <div id="actionMenu" class="action-menu">
-        <button onclick="actionReply()">Balas ↩️</button>
+        <button id="btnReply" onclick="actionReply()">Balas ↩️</button>
         <button id="btnDel" onclick="actionDelete()" style="color:red; font-weight:bold;">Hapus 🗑️</button>
     </div>
 
     <div class="app-container">
         <div class="wa-header">
-            <h2 id="headerTitle">Pufutara</h2>
-            <button onclick="logout()" id="logoutBtn" style="display:none; color:white; background:none; border:none; cursor:pointer; font-size: 0.85rem; padding: 5px;">Logout</button>
+            <div>
+                <h2 id="headerTitle">Pufutara</h2>
+                <small id="userSubtitle" style="display:none; color: #bbb; font-size: 0.75rem;">Masuk sebagai: </small>
+            </div>
+            <button onclick="logout()" id="logoutBtn" style="display:none; color:white; background:none; border:none; cursor:pointer; font-size: 0.85rem; padding: 5px; text-decoration: underline;">Logout</button>
         </div>
 
         <div id="authScreen" class="screen active auth-screen">
@@ -79,6 +86,9 @@
             </div>
 
             <div class="input-area">
+                <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="uploadImage()">
+                <button class="btn-icon" onclick="document.getElementById('imgUpload').click()" title="Kirim Gambar">📷</button>
+                
                 <input type="text" id="msgIn" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter')sendMessage()">
                 <button class="btn-send" onclick="sendMessage()">➤</button>
             </div>
@@ -116,22 +126,29 @@
         }
 
         async function logout() { 
-            await _client.auth.signOut(); // Menunggu proses logout di database selesai
-            location.reload(); // Baru refresh halaman
+            await _client.auth.signOut(); 
+            location.reload(); 
         }
 
         function enterChat() {
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('chatScreen').style.display = 'flex';
             document.getElementById('logoutBtn').style.display = 'block';
+            
             document.getElementById('headerTitle').innerText = "Grup Global";
+            
+            // TAMPILKAN NAMA USER DI HEADER
+            const namaUser = _userEmail.split('@')[0];
+            const subtitleEl = document.getElementById('userSubtitle');
+            subtitleEl.innerText = `Masuk sebagai: ${namaUser}`;
+            subtitleEl.style.display = 'block';
+            
             loadMessages();
             listenRealtime();
         }
 
         // --- CORE CHAT FUNCTIONS ---
         async function loadMessages() {
-            // Ambil ID juga supaya bisa dihapus nanti
             const { data } = await _client.from('global_chat')
                 .select('id, sender, message')
                 .order('id', { ascending: false })
@@ -149,21 +166,41 @@
             if (!txt) return;
             inp.value = '';
 
-            // Jika sedang reply, kita sisipkan kode rahasia |RPLY|
             let finalMessage = txt;
             if (replyingTo) {
                 finalMessage = `|RPLY|${replyingTo.sender}|${replyingTo.text}|${txt}`;
-                cancelReply(); // Tutup banner setelah kirim
+                cancelReply(); 
             }
 
-            await _client.from('global_chat').insert([{
-                sender: _userEmail,
-                message: finalMessage
-            }]);
+            await _client.from('global_chat').insert([{ sender: _userEmail, message: finalMessage }]);
+        }
+
+        // --- UPLOAD GAMBAR (BASE64 TRICK) ---
+        function uploadImage() {
+            const fileInput = document.getElementById('imgUpload');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Batasi ukuran gambar maks 2MB supaya database gak keberatan
+            if (file.size > 2 * 1024 * 1024) {
+                alert("Wah, gambarnya kegedean Bang! Maksimal 2MB ya biar aplikasinya tetap ngebut.");
+                fileInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Img = e.target.result;
+                // Kita kasih kode |IMG| di depan teksnya biar sistem tahu ini gambar
+                const payload = `|IMG|${base64Img}`;
+                
+                await _client.from('global_chat').insert([{ sender: _userEmail, message: payload }]);
+                fileInput.value = ''; // Reset input
+            };
+            reader.readAsDataURL(file);
         }
 
         function renderMessage(m) {
-            // Mencegah pesan duplikat saat ditarik oleh realtime
             if (document.getElementById(`msg-${m.id}`)) return;
 
             const box = document.getElementById('chatMessages');
@@ -175,40 +212,46 @@
 
             let displayTxt = m.message;
             let quoteHtml = '';
+            let rawTextForReply = m.message; // Menyimpan teks murni kalau mau di-reply
 
-            // Deteksi jika pesan ini adalah balasan (mengandung |RPLY|)
-            if (displayTxt.startsWith('|RPLY|')) {
+            // CEK KALAU PESAN INI ADALAH GAMBAR
+            if (displayTxt.startsWith('|IMG|')) {
+                const base64Data = displayTxt.replace('|IMG|', '');
+                displayTxt = `<img src="${base64Data}" alt="Pufutara Image">`;
+                rawTextForReply = "[Gambar]"; // Kalau di-reply, tulisan yang muncul "[Gambar]"
+            }
+            // CEK KALAU PESAN INI BALASAN
+            else if (displayTxt.startsWith('|RPLY|')) {
                 const parts = displayTxt.split('|');
                 if (parts.length >= 4) {
                     const rSender = parts[2].split('@')[0];
                     const rText = parts[3];
                     quoteHtml = `<div class="msg-quote"><strong>${rSender}</strong><br>${rText}</div>`;
-                    displayTxt = parts.slice(4).join('|'); // Ambil sisa pesan asli
+                    displayTxt = parts.slice(4).join('|'); 
+                    rawTextForReply = displayTxt;
                 }
             }
 
-            div.innerHTML = `${quoteHtml}<b style="font-size: 0.7rem;">${m.sender.split('@')[0]}</b><br>${displayTxt}`;
+            div.innerHTML = `${quoteHtml}<b style="font-size: 0.7rem; color: ${isMe ? '#a5d6a7' : '#075e54'};">${m.sender.split('@')[0]}</b><br>${displayTxt}`;
             
-            // Event klik untuk membuka menu Balas/Hapus
+            // ACTION MENU (KLIK PESAN)
             div.onclick = (e) => {
                 e.stopPropagation();
-                selectedMsg = { id: m.id, sender: m.sender, text: displayTxt, isMe };
+                selectedMsg = { id: m.id, sender: m.sender, text: rawTextForReply, isMe };
                 
                 const menu = document.getElementById('actionMenu');
                 menu.style.display = 'flex';
-                // Hitung posisi menu agar tidak keluar layar
                 menu.style.left = Math.min(e.pageX, window.innerWidth - 130) + 'px';
                 menu.style.top = Math.min(e.pageY, window.innerHeight - 100) + 'px';
                 
-                // Cuma bisa hapus pesan sendiri
                 document.getElementById('btnDel').style.display = isMe ? 'block' : 'none';
             };
 
             box.appendChild(div);
-            box.scrollTop = box.scrollHeight; // Auto scroll ke bawah
+            box.scrollTop = box.scrollHeight; 
         }
 
-        // --- ACTIONS (REPLY & DELETE) ---
+        // --- ACTIONS ---
         function actionReply() {
             replyingTo = selectedMsg;
             document.getElementById('replyBanner').style.display = 'flex';
@@ -216,41 +259,31 @@
             document.getElementById('msgIn').focus();
         }
 
-        function cancelReply() {
-            replyingTo = null;
-            document.getElementById('replyBanner').style.display = 'none';
-        }
+        function cancelReply() { replyingTo = null; document.getElementById('replyBanner').style.display = 'none'; }
 
         async function actionDelete() {
             if(confirm("Yakin ingin menghapus pesan ini?")) {
                 await _client.from('global_chat').delete().eq('id', selectedMsg.id);
-                document.getElementById(`msg-${selectedMsg.id}`).remove(); // Hapus dari layar
+                document.getElementById(`msg-${selectedMsg.id}`).remove(); 
             }
         }
 
-        // Tutup menu kalau klik sembarang tempat di layar
         document.addEventListener('click', () => { document.getElementById('actionMenu').style.display = 'none'; });
 
         // --- REALTIME UPDATES ---
         function listenRealtime() {
             _client.channel('public_chat')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'global_chat' }, payload => {
-                    if (payload.eventType === 'INSERT') {
-                        renderMessage(payload.new);
-                    } else if (payload.eventType === 'DELETE') {
-                        // Kalau ada yang hapus pesan, hilangkan dari layar semua orang
+                    if (payload.eventType === 'INSERT') renderMessage(payload.new);
+                    else if (payload.eventType === 'DELETE') {
                         const el = document.getElementById(`msg-${payload.old.id}`);
                         if(el) el.remove();
                     }
                 }).subscribe();
         }
 
-        // Auto-login
         _client.auth.getSession().then(({data}) => {
-            if(data.session) {
-                _userEmail = data.session.user.email;
-                enterChat();
-            }
+            if(data.session) { _userEmail = data.session.user.email; enterChat(); }
         });
     </script>
 </body>
