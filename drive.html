@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pufutara Drive - Cloud Storage</title>
+    <title>Pufutara Drive - Pro Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        body { background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
         
         .app-container { 
             width: 100%; max-width: 900px; height: 85vh; 
@@ -16,8 +16,9 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
-        .header { background: #1a73e8; color: #fff; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .header h2 { font-weight: 500; display: flex; align-items: center; gap: 10px; }
+        /* Tema Pufutara (Hitam-Putih) */
+        .header { background: #111; color: #fff; padding: 20px; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .header h2 { font-weight: bold; display: flex; align-items: center; gap: 10px; font-size: 1.3rem; }
         
         .screen { display: none; flex: 1; flex-direction: column; overflow: hidden; background: #fff; }
         .active { display: flex; }
@@ -26,58 +27,60 @@
         .auth-screen { padding: 40px; text-align: center; justify-content: center; align-items: center; }
         .auth-screen input { width: 100%; max-width: 300px; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; display: block; margin: 0 auto 10px; }
         .btn { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; max-width: 300px; transition: 0.2s; }
-        .btn-blue { background: #1a73e8; color: #fff; margin-bottom: 10px; }
-        .btn-blue:hover { background: #1557b0; }
+        .btn-black { background: #111; color: #fff; margin-bottom: 10px; }
+        .btn-black:hover { background: #333; }
 
         /* Drive UI */
-        .drive-toolbar { padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .btn-upload { background: #1a73e8; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; display: flex; gap: 8px; align-items: center; }
-        .btn-upload:hover { background: #1557b0; }
+        .drive-toolbar { padding: 15px 20px; background: #fff; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .btn-upload { background: #111; color: #fff; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; display: flex; gap: 8px; align-items: center; transition: 0.2s; }
+        .btn-upload:hover { background: #333; }
 
-        .file-grid { flex: 1; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; align-content: start; }
+        .file-grid { flex: 1; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; align-content: start; background: #f9f9f9; }
         
         /* File Cards */
-        .file-card { background: #fff; border: 1px solid #dadce0; border-radius: 8px; padding: 15px; text-align: center; cursor: pointer; transition: 0.2s; position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .file-card:hover { background: #f1f3f4; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .file-card { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: 0.2s; position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .file-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.08); transform: translateY(-2px); border-color: #ddd; }
         
-        .file-icon { font-size: 3rem; }
-        .file-preview { width: 100%; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #eee; }
-        .file-name { font-size: 0.85rem; color: #3c4043; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
-        .file-size { font-size: 0.7rem; color: #80868b; }
+        .file-icon { font-size: 3.5rem; }
+        .file-preview { width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; }
+        .file-name { font-size: 0.85rem; color: #111; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+        .file-size { font-size: 0.7rem; color: #888; margin-bottom: 5px; }
 
-        .delete-btn { position: absolute; top: -8px; right: -8px; background: #ea4335; color: white; border: none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; display: none; font-weight: bold; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .file-card:hover .delete-btn { display: block; }
+        /* Action Buttons on Card */
+        .card-actions { display: flex; gap: 5px; width: 100%; justify-content: center; margin-top: auto; border-top: 1px solid #eee; padding-top: 10px; }
+        .action-btn { background: #f0f0f0; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; flex: 1; transition: 0.2s; }
+        .action-btn:hover { background: #ddd; }
+        .action-btn.del:hover { background: #ffecec; color: red; }
         
-        /* Empty State */
-        .empty-state { grid-column: 1 / -1; text-align: center; color: #80868b; padding-top: 50px; }
+        .empty-state { grid-column: 1 / -1; text-align: center; color: #888; padding-top: 50px; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
         <div class="header">
-            <h2>☁️ Pufutara Drive</h2>
+            <h2>Pufutara Drive</h2>
             <div>
-                <small id="userSubtitle" style="display:none; color: #e8eaed; margin-right: 15px;"></small>
-                <button onclick="logout()" id="logoutBtn" style="display:none; color:white; background:none; border:none; cursor:pointer; text-decoration: underline;">Keluar</button>
+                <small id="userSubtitle" style="display:none; color: #bbb; margin-right: 15px;"></small>
+                <button onclick="logout()" id="logoutBtn" style="display:none; color:white; background:none; border:none; cursor:pointer; text-decoration: underline; font-size: 0.9rem;">Logout</button>
             </div>
         </div>
 
         <div id="authScreen" class="screen active auth-screen">
-            <h1 style="margin-bottom: 20px; color: #1a73e8;">Login Drive</h1>
+            <h1 style="margin-bottom: 20px;">Masuk Drive</h1>
             <p style="margin-bottom: 20px; font-size: 0.9rem; color: #555;">Gunakan akun Pufutara Chat kamu</p>
             <input type="email" id="emailIn" placeholder="Email">
             <input type="password" id="passIn" placeholder="Password">
-            <button class="btn btn-blue" onclick="handleAuth()">Masuk Drive</button>
+            <button class="btn btn-black" onclick="handleAuth()">Login</button>
             <p id="authErr" style="color:red; font-size:0.8rem; margin-top: 10px;"></p>
         </div>
 
         <div id="driveScreen" class="screen">
             <div class="drive-toolbar">
-                <div style="font-weight: bold; color: #555;">Ruang Pribadi Kamu</div>
+                <div style="font-weight: 600; color: #111; font-size: 1.1rem;">Ruang File Pribadi</div>
                 <input type="file" id="fileUpload" style="display:none;" onchange="uploadFile()">
                 <button class="btn-upload" id="btnUpload" onclick="document.getElementById('fileUpload').click()">
-                    <span>➕</span> Upload File
+                    ➕ Upload File
                 </button>
             </div>
             
@@ -87,7 +90,6 @@
     </div>
 
     <script>
-        // Konfigurasi pakai database kamu yang sama persis
         const _CONFIG = {
             URL: 'https://puywjdopumlzvmzbcudr.supabase.co',
             KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1eXdqZG9wdW1senZtemJjdWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDE3MTksImV4cCI6MjA4NzkxNzcxOX0.vvThyjtK2SlA9oA9Mr_XOmt1R_tNZk-ib3PO9XpiiSc'
@@ -106,12 +108,8 @@
             errBox.innerText = "Membuka brankas...";
 
             const { data, error } = await _client.auth.signInWithPassword({ email, password });
-            if (error) {
-                errBox.innerText = error.message;
-            } else {
-                _userEmail = data.user.email;
-                enterDrive();
-            }
+            if (error) errBox.innerText = error.message;
+            else { _userEmail = data.user.email; enterDrive(); }
         }
 
         async function logout() { await _client.auth.signOut(); location.reload(); }
@@ -121,7 +119,6 @@
             document.getElementById('driveScreen').style.display = 'flex';
             document.getElementById('logoutBtn').style.display = 'inline-block';
             
-            // Nama folder diambil dari nama depan email
             _userFolder = _userEmail.split('@')[0]; 
             document.getElementById('userSubtitle').innerText = _userEmail;
             document.getElementById('userSubtitle').style.display = 'inline-block';
@@ -134,24 +131,21 @@
             const grid = document.getElementById('fileGrid');
             grid.innerHTML = '<div class="empty-state">Memuat file...</div>';
 
-            // Tarik data file khusus dari folder user ini
             const { data, error } = await _client.storage.from(BUCKET_NAME).list(_userFolder + '/');
 
             if (error) {
-                console.error(error);
                 grid.innerHTML = `<div class="empty-state" style="color:red;">Gagal memuat: ${error.message}</div>`;
                 return;
             }
 
-            // Hilangkan file tersembunyi/placeholder bawaan Supabase (.emptyFolderPlaceholder)
             const validFiles = data.filter(f => f.name !== '.emptyFolderPlaceholder');
 
             if (validFiles.length === 0) {
-                grid.innerHTML = '<div class="empty-state">Drive kamu masih kosong.<br>Klik tombol <b>Upload File</b> di atas.</div>';
+                grid.innerHTML = '<div class="empty-state">Drive masih kosong.<br><br>Klik <b>Upload File</b> di kanan atas.</div>';
                 return;
             }
 
-            grid.innerHTML = ''; // Bersihkan loading
+            grid.innerHTML = ''; 
             validFiles.forEach(file => renderFileCard(file));
         }
 
@@ -164,91 +158,117 @@
             const { data: publicUrlData } = _client.storage.from(BUCKET_NAME).getPublicUrl(filePath);
             const fileUrl = publicUrlData.publicUrl;
 
-            // Logika ikon / preview gambar
             const isImage = file.metadata.mimetype && file.metadata.mimetype.startsWith('image/');
             let visualHtml = '';
 
             if (isImage) {
                 visualHtml = `<img src="${fileUrl}" class="file-preview" alt="preview">`;
             } else {
-                // Tentukan emoji berdasarkan ekstensi file
                 const ext = file.name.split('.').pop().toLowerCase();
                 let icon = '📄';
                 if (['pdf'].includes(ext)) icon = '📕';
                 if (['zip', 'rar'].includes(ext)) icon = '🗜️';
                 if (['mp4', 'mkv'].includes(ext)) icon = '🎬';
                 if (['mp3', 'wav'].includes(ext)) icon = '🎵';
-                
                 visualHtml = `<div class="file-icon">${icon}</div>`;
             }
 
-            // Hitung ukuran file (Bytes ke KB/MB)
             const sizeKB = file.metadata.size / 1024;
             const sizeText = sizeKB > 1024 ? (sizeKB / 1024).toFixed(2) + ' MB' : sizeKB.toFixed(0) + ' KB';
 
+            // Cegah card ter-klik (buka file) kalau user nge-klik tombol aksi
             card.innerHTML = `
-                <button class="delete-btn" onclick="deleteFile('${file.name}', event)" title="Hapus File">✕</button>
-                ${visualHtml}
-                <div class="file-name" title="${file.name}">${file.name}</div>
-                <div class="file-size">${sizeText}</div>
+                <div style="width:100%; text-align:center;" onclick="window.open('${fileUrl}', '_blank')">
+                    ${visualHtml}
+                    <div class="file-name" title="${file.name}">${file.name}</div>
+                    <div class="file-size">${sizeText}</div>
+                </div>
+                <div class="card-actions">
+                    <button class="action-btn" onclick="renameFile('${file.name}', event)" title="Ubah Nama">✏️</button>
+                    <button class="action-btn" onclick="shareFile('${fileUrl}', event)" title="Copy Link">🔗</button>
+                    <button class="action-btn del" onclick="deleteFile('${file.name}', event)" title="Hapus">🗑️</button>
+                </div>
             `;
 
-            // Kalau card diklik, buka/download filenya
-            card.onclick = () => window.open(fileUrl, '_blank');
             grid.appendChild(card);
         }
 
-        // --- UPLOAD FILE ---
+        // --- UPLOAD FILE (NAMA ASLI) ---
         async function uploadFile() {
             const input = document.getElementById('fileUpload');
             const file = input.files[0];
             if (!file) return;
 
-            // Batas maksimal 15MB biar rapi
             if (file.size > 15 * 1024 * 1024) {
-                alert("Maksimal ukuran file 15MB ya Kak!");
+                alert("Maksimal ukuran file 15MB ya Bang!");
                 input.value = ''; return;
             }
 
             const btn = document.getElementById('btnUpload');
-            btn.innerHTML = '<span>⏳</span> Mengunggah...';
+            btn.innerHTML = '⏳ Mengunggah...';
             btn.disabled = true;
 
             try {
-                // Beri penanda waktu di depan nama file biar kalau upload file yg namanya sama gak nimpa
-                const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, ''); // bersihkan spasi & simbol aneh
-                const fileName = `${Date.now()}_${safeName}`;
-                const filePath = `${_userFolder}/${fileName}`;
+                // Pakai NAMA ASLI FILE. Spasi diganti underscore biar rapi di database.
+                const originalName = file.name.replace(/\s+/g, '_');
+                const filePath = `${_userFolder}/${originalName}`;
 
-                const { error } = await _client.storage.from(BUCKET_NAME).upload(filePath, file);
-                
+                // upsert: true -> Kalau ada nama file yang sama persis, dia akan ditimpa (di-update)
+                const { error } = await _client.storage.from(BUCKET_NAME).upload(filePath, file, { upsert: true });
                 if (error) throw error;
                 
-                // Refresh list
                 loadFiles();
             } catch (err) {
                 alert("Gagal upload: " + err.message);
             } finally {
-                btn.innerHTML = '<span>➕</span> Upload File';
+                btn.innerHTML = '➕ Upload File';
                 btn.disabled = false;
                 input.value = '';
             }
         }
 
+        // --- RENAME FILE ---
+        async function renameFile(oldName, event) {
+            event.stopPropagation();
+            
+            // Tanya user nama barunya (extensinya harus dibawa)
+            const ext = oldName.split('.').pop();
+            const newName = prompt(`Masukkan nama baru (jangan lupa ekstensinya .${ext}):`, oldName);
+            
+            if (!newName || newName === oldName) return;
+
+            const oldPath = `${_userFolder}/${oldName}`;
+            const newPath = `${_userFolder}/${newName.replace(/\s+/g, '_')}`; // bersihkan spasi
+
+            const { error } = await _client.storage.from(BUCKET_NAME).move(oldPath, newPath);
+            
+            if (error) alert("Gagal ubah nama: " + error.message);
+            else loadFiles();
+        }
+
+        // --- SHARE FILE ---
+        function shareFile(fileUrl, event) {
+            event.stopPropagation();
+            // Salin link ke clipboard
+            navigator.clipboard.writeText(fileUrl).then(() => {
+                alert("Link berhasil di-copy! 🔗\nTinggal buka Pufutara Chat lalu paste (tempel) pesannya ke teman kamu.");
+            }).catch(err => {
+                alert("Gagal copy link otomatis, silakan copy manual:\n" + fileUrl);
+            });
+        }
+
         // --- DELETE FILE ---
         async function deleteFile(fileName, event) {
-            event.stopPropagation(); // Biar pas klik hapus, filenya gak kebuka
-
+            event.stopPropagation(); 
             if(confirm(`Yakin mau hapus permanen file "${fileName}"?`)) {
                 const filePath = `${_userFolder}/${fileName}`;
                 const { error } = await _client.storage.from(BUCKET_NAME).remove([filePath]);
-                
                 if (error) alert("Gagal menghapus: " + error.message);
-                else loadFiles(); // Refresh list
+                else loadFiles(); 
             }
         }
 
-        // Auto Login pakai sesi dari Chat (karena database-nya sama)
+        // Auto Login
         _client.auth.getSession().then(({data}) => {
             if(data.session) { _userEmail = data.session.user.email; enterDrive(); }
         });
